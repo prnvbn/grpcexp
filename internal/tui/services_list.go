@@ -80,13 +80,13 @@ func (d minimalDelegate) Height() int                             { return 1 }
 func (d minimalDelegate) Spacing() int                            { return 0 }
 func (d minimalDelegate) Update(_ tea.Msg, _ *list.Model) tea.Cmd { return nil }
 func (d minimalDelegate) Render(w io.Writer, m list.Model, index int, item list.Item) {
-	svc, ok := item.(svcItem)
+	svc, ok := item.(list.DefaultItem)
 	if !ok {
 		return
 	}
 	if index == m.Index() {
-		fmt.Fprintf(w, "> %s", selectedStyle.Render(svc.name))
+		fmt.Fprintf(w, "> %s", selectedStyle.Render(svc.Title()))
 	} else {
-		fmt.Fprintf(w, "  %s", svc.name)
+		fmt.Fprintf(w, "  %s", svc.Title())
 	}
 }
