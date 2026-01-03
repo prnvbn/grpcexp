@@ -2,6 +2,20 @@ syntax = "proto3";
 
 package echo.v1;
 
+
+message EvenMoreNestedMessage {
+  string message = 1;
+  bool boolean = 2;
+}
+
+message NestedMessage {
+  string message = 1;
+  bool boolean = 2;
+  int32 int32_value = 3;
+  EvenMoreNestedMessage even_more_nested_message = 4;
+  EvenMoreNestedMessage even_more_nested_message_2 = 5;
+}
+
 message Message {
   string message = 1;
   bool boolean = 2;
@@ -18,6 +32,8 @@ message Message {
   int64 int64_value = 5;
   float float_value = 6;
   double double_value = 7;
+
+  NestedMessage nested_message = 8;
 }
 
 service EchoService {

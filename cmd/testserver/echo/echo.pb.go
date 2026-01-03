@@ -67,7 +67,135 @@ func (x Message_Enum) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use Message_Enum.Descriptor instead.
 func (Message_Enum) EnumDescriptor() ([]byte, []int) {
-	return file_cmd_testserver_echo_echo_proto_rawDescGZIP(), []int{0, 0}
+	return file_cmd_testserver_echo_echo_proto_rawDescGZIP(), []int{2, 0}
+}
+
+type EvenMoreNestedMessage struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Message       string                 `protobuf:"bytes,1,opt,name=message,proto3" json:"message,omitempty"`
+	Boolean       bool                   `protobuf:"varint,2,opt,name=boolean,proto3" json:"boolean,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *EvenMoreNestedMessage) Reset() {
+	*x = EvenMoreNestedMessage{}
+	mi := &file_cmd_testserver_echo_echo_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *EvenMoreNestedMessage) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*EvenMoreNestedMessage) ProtoMessage() {}
+
+func (x *EvenMoreNestedMessage) ProtoReflect() protoreflect.Message {
+	mi := &file_cmd_testserver_echo_echo_proto_msgTypes[0]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use EvenMoreNestedMessage.ProtoReflect.Descriptor instead.
+func (*EvenMoreNestedMessage) Descriptor() ([]byte, []int) {
+	return file_cmd_testserver_echo_echo_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *EvenMoreNestedMessage) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
+func (x *EvenMoreNestedMessage) GetBoolean() bool {
+	if x != nil {
+		return x.Boolean
+	}
+	return false
+}
+
+type NestedMessage struct {
+	state                   protoimpl.MessageState `protogen:"open.v1"`
+	Message                 string                 `protobuf:"bytes,1,opt,name=message,proto3" json:"message,omitempty"`
+	Boolean                 bool                   `protobuf:"varint,2,opt,name=boolean,proto3" json:"boolean,omitempty"`
+	Int32Value              int32                  `protobuf:"varint,3,opt,name=int32_value,json=int32Value,proto3" json:"int32_value,omitempty"`
+	EvenMoreNestedMessage   *EvenMoreNestedMessage `protobuf:"bytes,4,opt,name=even_more_nested_message,json=evenMoreNestedMessage,proto3" json:"even_more_nested_message,omitempty"`
+	EvenMoreNestedMessage_2 *EvenMoreNestedMessage `protobuf:"bytes,5,opt,name=even_more_nested_message_2,json=evenMoreNestedMessage2,proto3" json:"even_more_nested_message_2,omitempty"`
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
+}
+
+func (x *NestedMessage) Reset() {
+	*x = NestedMessage{}
+	mi := &file_cmd_testserver_echo_echo_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *NestedMessage) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*NestedMessage) ProtoMessage() {}
+
+func (x *NestedMessage) ProtoReflect() protoreflect.Message {
+	mi := &file_cmd_testserver_echo_echo_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use NestedMessage.ProtoReflect.Descriptor instead.
+func (*NestedMessage) Descriptor() ([]byte, []int) {
+	return file_cmd_testserver_echo_echo_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *NestedMessage) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
+func (x *NestedMessage) GetBoolean() bool {
+	if x != nil {
+		return x.Boolean
+	}
+	return false
+}
+
+func (x *NestedMessage) GetInt32Value() int32 {
+	if x != nil {
+		return x.Int32Value
+	}
+	return 0
+}
+
+func (x *NestedMessage) GetEvenMoreNestedMessage() *EvenMoreNestedMessage {
+	if x != nil {
+		return x.EvenMoreNestedMessage
+	}
+	return nil
+}
+
+func (x *NestedMessage) GetEvenMoreNestedMessage_2() *EvenMoreNestedMessage {
+	if x != nil {
+		return x.EvenMoreNestedMessage_2
+	}
+	return nil
 }
 
 type Message struct {
@@ -79,13 +207,14 @@ type Message struct {
 	Int64Value    int64                  `protobuf:"varint,5,opt,name=int64_value,json=int64Value,proto3" json:"int64_value,omitempty"`
 	FloatValue    float32                `protobuf:"fixed32,6,opt,name=float_value,json=floatValue,proto3" json:"float_value,omitempty"`
 	DoubleValue   float64                `protobuf:"fixed64,7,opt,name=double_value,json=doubleValue,proto3" json:"double_value,omitempty"`
+	NestedMessage *NestedMessage         `protobuf:"bytes,8,opt,name=nested_message,json=nestedMessage,proto3" json:"nested_message,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Message) Reset() {
 	*x = Message{}
-	mi := &file_cmd_testserver_echo_echo_proto_msgTypes[0]
+	mi := &file_cmd_testserver_echo_echo_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -97,7 +226,7 @@ func (x *Message) String() string {
 func (*Message) ProtoMessage() {}
 
 func (x *Message) ProtoReflect() protoreflect.Message {
-	mi := &file_cmd_testserver_echo_echo_proto_msgTypes[0]
+	mi := &file_cmd_testserver_echo_echo_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -110,7 +239,7 @@ func (x *Message) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Message.ProtoReflect.Descriptor instead.
 func (*Message) Descriptor() ([]byte, []int) {
-	return file_cmd_testserver_echo_echo_proto_rawDescGZIP(), []int{0}
+	return file_cmd_testserver_echo_echo_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *Message) GetMessage() string {
@@ -162,11 +291,28 @@ func (x *Message) GetDoubleValue() float64 {
 	return 0
 }
 
+func (x *Message) GetNestedMessage() *NestedMessage {
+	if x != nil {
+		return x.NestedMessage
+	}
+	return nil
+}
+
 var File_cmd_testserver_echo_echo_proto protoreflect.FileDescriptor
 
 const file_cmd_testserver_echo_echo_proto_rawDesc = "" +
 	"\n" +
-	"\x1ecmd/testserver/echo/echo.proto\x12\aecho.v1\"\xb0\x02\n" +
+	"\x1ecmd/testserver/echo/echo.proto\x12\aecho.v1\"K\n" +
+	"\x15EvenMoreNestedMessage\x12\x18\n" +
+	"\amessage\x18\x01 \x01(\tR\amessage\x12\x18\n" +
+	"\aboolean\x18\x02 \x01(\bR\aboolean\"\x99\x02\n" +
+	"\rNestedMessage\x12\x18\n" +
+	"\amessage\x18\x01 \x01(\tR\amessage\x12\x18\n" +
+	"\aboolean\x18\x02 \x01(\bR\aboolean\x12\x1f\n" +
+	"\vint32_value\x18\x03 \x01(\x05R\n" +
+	"int32Value\x12W\n" +
+	"\x18even_more_nested_message\x18\x04 \x01(\v2\x1e.echo.v1.EvenMoreNestedMessageR\x15evenMoreNestedMessage\x12Z\n" +
+	"\x1aeven_more_nested_message_2\x18\x05 \x01(\v2\x1e.echo.v1.EvenMoreNestedMessageR\x16evenMoreNestedMessage2\"\xef\x02\n" +
 	"\aMessage\x12\x18\n" +
 	"\amessage\x18\x01 \x01(\tR\amessage\x12\x18\n" +
 	"\aboolean\x18\x02 \x01(\bR\aboolean\x12)\n" +
@@ -177,7 +323,8 @@ const file_cmd_testserver_echo_echo_proto_rawDesc = "" +
 	"int64Value\x12\x1f\n" +
 	"\vfloat_value\x18\x06 \x01(\x02R\n" +
 	"floatValue\x12!\n" +
-	"\fdouble_value\x18\a \x01(\x01R\vdoubleValue\"@\n" +
+	"\fdouble_value\x18\a \x01(\x01R\vdoubleValue\x12=\n" +
+	"\x0enested_message\x18\b \x01(\v2\x16.echo.v1.NestedMessageR\rnestedMessage\"@\n" +
 	"\x04Enum\x12\x14\n" +
 	"\x10ENUM_UNSPECIFIED\x10\x00\x12\x10\n" +
 	"\fENUM_VALUE_1\x10\x01\x12\x10\n" +
@@ -199,20 +346,25 @@ func file_cmd_testserver_echo_echo_proto_rawDescGZIP() []byte {
 }
 
 var file_cmd_testserver_echo_echo_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_cmd_testserver_echo_echo_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
+var file_cmd_testserver_echo_echo_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
 var file_cmd_testserver_echo_echo_proto_goTypes = []any{
-	(Message_Enum)(0), // 0: echo.v1.Message.Enum
-	(*Message)(nil),   // 1: echo.v1.Message
+	(Message_Enum)(0),             // 0: echo.v1.Message.Enum
+	(*EvenMoreNestedMessage)(nil), // 1: echo.v1.EvenMoreNestedMessage
+	(*NestedMessage)(nil),         // 2: echo.v1.NestedMessage
+	(*Message)(nil),               // 3: echo.v1.Message
 }
 var file_cmd_testserver_echo_echo_proto_depIdxs = []int32{
-	0, // 0: echo.v1.Message.enum:type_name -> echo.v1.Message.Enum
-	1, // 1: echo.v1.EchoService.Echo:input_type -> echo.v1.Message
-	1, // 2: echo.v1.EchoService.Echo:output_type -> echo.v1.Message
-	2, // [2:3] is the sub-list for method output_type
-	1, // [1:2] is the sub-list for method input_type
-	1, // [1:1] is the sub-list for extension type_name
-	1, // [1:1] is the sub-list for extension extendee
-	0, // [0:1] is the sub-list for field type_name
+	1, // 0: echo.v1.NestedMessage.even_more_nested_message:type_name -> echo.v1.EvenMoreNestedMessage
+	1, // 1: echo.v1.NestedMessage.even_more_nested_message_2:type_name -> echo.v1.EvenMoreNestedMessage
+	0, // 2: echo.v1.Message.enum:type_name -> echo.v1.Message.Enum
+	2, // 3: echo.v1.Message.nested_message:type_name -> echo.v1.NestedMessage
+	3, // 4: echo.v1.EchoService.Echo:input_type -> echo.v1.Message
+	3, // 5: echo.v1.EchoService.Echo:output_type -> echo.v1.Message
+	5, // [5:6] is the sub-list for method output_type
+	4, // [4:5] is the sub-list for method input_type
+	4, // [4:4] is the sub-list for extension type_name
+	4, // [4:4] is the sub-list for extension extendee
+	0, // [0:4] is the sub-list for field type_name
 }
 
 func init() { file_cmd_testserver_echo_echo_proto_init() }
@@ -226,7 +378,7 @@ func file_cmd_testserver_echo_echo_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_cmd_testserver_echo_echo_proto_rawDesc), len(file_cmd_testserver_echo_echo_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   1,
+			NumMessages:   3,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
