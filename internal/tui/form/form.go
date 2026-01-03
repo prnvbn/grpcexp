@@ -169,7 +169,18 @@ func (f *Form) View() string {
 	if f.submitted {
 		b.WriteString(headerStyle.Render("Form Submitted!"))
 		b.WriteString("\n")
-		b.WriteString(f.renderSubmittedValues())
+
+		b.WriteString("Values:\n")
+
+		mp := f.submittedValues()
+
+		enc := json.NewEncoder(&b)
+		enc.SetIndent("", "  ")
+		err := enc.Encode(mp)
+		if err != nil {
+			return fmt.Sprintf("Error encoding submitted values: %v", err)
+		}
+
 	} else {
 		b.WriteString(f.renderFields())
 	}
@@ -230,9 +241,7 @@ func (f *Form) SetSize(width, height int) {
 	}
 }
 
-func (f *Form) renderSubmittedValues() string {
-	var b strings.Builder
-	b.WriteString("Values:\n")
+func (f *Form) submittedValues() map[string]string {
 
 	mp := make(map[string]string)
 	for _, field := range f.fields {
@@ -250,14 +259,8 @@ func (f *Form) renderSubmittedValues() string {
 
 	}
 
-	enc := json.NewEncoder(&b)
-	enc.SetIndent("", "  ")
-	err := enc.Encode(mp)
-	if err != nil {
-		return fmt.Sprintf("Error encoding submitted values: %v", err)
-	}
+	return mp
 
-	return b.String()
 }
 
 func (f *Form) buildFields() {
