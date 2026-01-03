@@ -7,9 +7,10 @@ import (
 	"log"
 	"net"
 
-	"google.golang.org/grpc"
+	echov1 "github.com/prnvbn/grpcexp/cmd/testserver/echo"
 	helloworldpb "google.golang.org/grpc/examples/helloworld/helloworld"
-	routeguidepb "google.golang.org/grpc/examples/route_guide/routeguide"
+
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 )
 
@@ -19,12 +20,17 @@ var (
 
 type server struct {
 	helloworldpb.UnimplementedGreeterServer
-	routeguidepb.UnimplementedRouteGuideServer
+	echov1.UnimplementedEchoServiceServer
 }
 
 func (s *server) SayHello(_ context.Context, in *helloworldpb.HelloRequest) (*helloworldpb.HelloReply, error) {
 	log.Printf("Received: %v", in.GetName())
 	return &helloworldpb.HelloReply{Message: "Hello " + in.GetName()}, nil
+}
+
+func (s *server) Echo(_ context.Context, in *echov1.Message) (*echov1.Message, error) {
+	log.Printf("Received: %v", in.GetMessage())
+	return in, nil
 }
 
 func main() {
@@ -35,13 +41,8 @@ func main() {
 	}
 	s := grpc.NewServer()
 
-	// Greeter service (helloworld)
 	helloworldpb.RegisterGreeterServer(s, &server{})
-
-	// RouteGuide service - has streaming RPCs and complex message types
-	// Unary: GetFeature, Server streaming: ListFeatures,
-	// Client streaming: RecordRoute, Bidirectional streaming: RouteChat
-	routeguidepb.RegisterRouteGuideServer(s, &server{})
+	echov1.RegisterEchoServiceServer(s, &server{})
 
 	reflection.Register(s)
 	log.Printf("server listening at %v", lis.Addr())

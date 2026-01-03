@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package echo.v1;
+
+message Message {
+  string message = 1;
+  bool boolean = 2;
+
+  enum Enum {
+    ENUM_UNSPECIFIED = 0;
+    ENUM_VALUE_1 = 1;
+    ENUM_VALUE_2 = 2;
+  }
+
+  Enum enum = 3;
+}
+
+service EchoService {
+  rpc Echo(Message) returns (Message);
+}
