@@ -15,15 +15,19 @@ type viewState int
 const (
 	viewServices viewState = iota
 	viewMethods
+	viewMethodDetails
 )
 
 type Model struct {
-	state        viewState
-	servicesList ServicesList
-	methodsList  *MethodsList
-	grpcClient   *grpc.Client
-	width        int
-	height       int
+	state viewState
+
+	servicesList  ServicesList
+	methodsList   *MethodsList
+	methodDetails *MethodDetails
+
+	grpcClient *grpc.Client
+	width      int
+	height     int
 }
 
 func NewModel(grpcClient *grpc.Client) (Model, error) {
@@ -50,9 +54,16 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "q", "ctrl+c":
 			return m, tea.Quit
 		case "esc", "backspace":
-			if m.state == viewMethods {
+			switch m.state {
+			case viewServices:
+				return m, tea.Quit
+			case viewMethods:
 				m.state = viewServices
 				m.methodsList = nil
+				return m, nil
+			case viewMethodDetails:
+				m.state = viewMethods
+				m.methodDetails = nil
 				return m, nil
 			}
 		case "enter":
@@ -63,7 +74,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					fmt.Fprintf(os.Stderr, "no service selected\n")
 					return m, tea.Quit
 				}
-				m.servicesList.SetSelected(svc.name)
+
 				methods, err := m.grpcClient.ListMethods(svc.name)
 				if err != nil {
 					fmt.Fprintf(os.Stderr, "error listing methods: %v\n", err)
@@ -74,8 +85,16 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.methodsList = &methodsList
 				m.state = viewMethods
 			case viewMethods:
-
+				md, ok := m.methodsList.SelectedItem()
+				if !ok {
+					fmt.Fprintf(os.Stderr, "no method selected\n")
+					return m, tea.Quit
+				}
+				methodDetails := NewMethodDetails(md.method)
+				m.methodDetails = &methodDetails
+				m.state = viewMethodDetails
 			}
+
 		}
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
@@ -92,20 +111,32 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if m.methodsList != nil {
 			cmd = m.methodsList.Update(msg)
 		}
-	default:
+	case viewServices:
 		cmd = m.servicesList.Update(msg)
+	case viewMethodDetails:
+		if m.methodDetails != nil {
+			_, cmd = m.methodDetails.Update(msg)
+		}
+	default:
+		panic("unknown state - non exhaustive switch for update")
 	}
 	return m, cmd
 }
 
 func (m Model) View() string {
 	switch m.state {
+	case viewServices:
+		return m.servicesList.View()
 	case viewMethods:
 		if m.methodsList != nil {
 			return m.methodsList.View()
-		} else {
-			return "No methods found for selected service"
 		}
+		return "No methods found for selected service"
+	case viewMethodDetails:
+		if m.methodDetails != nil {
+			return m.methodDetails.View()
+		}
+		return "No method details found"
 	}
-	return m.servicesList.View()
+	panic(fmt.Sprintf("unknown state - non exhaustive switch for view state: %d", m.state))
 }
