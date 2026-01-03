@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/atotto/clipboard"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/prnvbn/grpcexp/internal/grpc"
 	"google.golang.org/protobuf/reflect/protoreflect"
@@ -65,10 +66,6 @@ func (f *Form) Init() tea.Cmd {
 }
 
 func (f *Form) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	if f.state == formStateResult {
-		return f, nil
-	}
-
 	switch msg := msg.(type) {
 	case rpcResultMsg:
 		f.state = formStateResult
@@ -76,11 +73,28 @@ func (f *Form) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		f.responseErr = msg.err
 		return f, nil
 	case tea.KeyMsg:
-		if f.state == formStateCalling {
+		switch f.state {
+		case formStateResult:
+			switch msg.String() {
+			case "y":
+				content := f.response
+				if f.responseErr != nil {
+					content = f.responseErr.Error()
+				}
+				clipboard.WriteAll(content)
+			case "q":
+				return f, tea.Quit
+			}
 			return f, nil
-		}
-		if model, cmd, handled := f.handleKey(msg); handled {
-			return model, cmd
+		case formStateCalling:
+			return f, nil
+		case formStateInput:
+			model, cmd, handled := f.handleKey(msg)
+			if handled {
+				return model, cmd
+			}
+		default:
+			panic(fmt.Sprintf("unknown state - non exhaustive switch for key msg: %d", f.state))
 		}
 	}
 
@@ -211,6 +225,8 @@ func (f *Form) View() string {
 			b.WriteString("\n\n")
 			b.WriteString(f.response)
 		}
+		b.WriteString("\n\n")
+		b.WriteString(labelStyle.Render("esc: back • y: copy response • q: quit"))
 	case formStateInput:
 		b.WriteString(f.renderFields())
 	default:
