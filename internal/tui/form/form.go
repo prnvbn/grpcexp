@@ -1,9 +1,10 @@
 package form
 
 import (
-	"encoding/json"
+	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/prnvbn/grpcexp/internal/grpc"
@@ -12,16 +13,32 @@ import (
 
 var _ tea.Model = &Form{}
 
+type formState int
+
+const (
+	formStateInput formState = iota
+	formStateCalling
+	formStateResult
+)
+
 type Form struct {
 	method     protoreflect.MethodDescriptor
 	fields     []Field
 	focusIndex int
-	submitted  bool
+	state      formState
 	width      int
 	height     int
 
 	unsupportedFields []string
 	client            *grpc.Client
+
+	response    string
+	responseErr error
+}
+
+type rpcResultMsg struct {
+	response string
+	err      error
 }
 
 func NewForm(method protoreflect.MethodDescriptor, client *grpc.Client) Form {
@@ -46,56 +63,71 @@ func (f *Form) Init() tea.Cmd {
 }
 
 func (f *Form) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	if f.submitted {
+	if f.state == formStateResult {
 		return f, nil
 	}
 
 	switch msg := msg.(type) {
+	case rpcResultMsg:
+		f.state = formStateResult
+		f.response = msg.response
+		f.responseErr = msg.err
+		return f, nil
 	case tea.KeyMsg:
-		switch msg.String() {
-		case "j":
-			if f.focusIndex > 0 && f.fields[f.focusIndex].kind != FieldText {
-				f.nextField()
-				return f, nil
-			}
-		case "tab", "down":
-			f.nextField()
+		if f.state == formStateCalling {
 			return f, nil
-		case "k":
-			if f.focusIndex > 0 && f.fields[f.focusIndex].kind != FieldText {
-				f.prevField()
-				return f, nil
-			}
-		case "shift+tab", "up":
-			f.prevField()
-			return f, nil
-		case "left", "h":
-			if len(f.fields) > 0 {
-				field := &f.fields[f.focusIndex]
-				if field.kind == FieldEnum || field.kind == FieldBool {
-					field.enumPicker.Prev()
-					return f, nil
-				}
-			}
-		case "right", "l":
-			if len(f.fields) > 0 {
-				field := &f.fields[f.focusIndex]
-				if field.kind == FieldEnum || field.kind == FieldBool {
-					field.enumPicker.Next()
-					return f, nil
-				}
-			}
-		case "enter":
-			if f.focusIndex == len(f.fields)-1 {
-				f.submitted = true
-				return f, nil
-			}
-			f.nextField()
-			return f, nil
+		}
+		if model, cmd, handled := f.handleKey(msg); handled {
+			return model, cmd
 		}
 	}
 
 	return f, f.updateFocusedField(msg)
+}
+
+func (f *Form) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+	switch msg.String() {
+	case "j":
+		if f.focusIndex > 0 && f.fields[f.focusIndex].kind != FieldText {
+			f.nextField()
+			return f, nil, true
+		}
+	case "tab", "down":
+		f.nextField()
+		return f, nil, true
+	case "k":
+		if f.focusIndex > 0 && f.fields[f.focusIndex].kind != FieldText {
+			f.prevField()
+			return f, nil, true
+		}
+	case "shift+tab", "up":
+		f.prevField()
+		return f, nil, true
+	case "left", "h":
+		if len(f.fields) > 0 {
+			field := &f.fields[f.focusIndex]
+			if field.kind == FieldEnum || field.kind == FieldBool {
+				field.enumPicker.Prev()
+				return f, nil, true
+			}
+		}
+	case "right", "l":
+		if len(f.fields) > 0 {
+			field := &f.fields[f.focusIndex]
+			if field.kind == FieldEnum || field.kind == FieldBool {
+				field.enumPicker.Next()
+				return f, nil, true
+			}
+		}
+	case "enter":
+		if f.focusIndex == len(f.fields)-1 || len(f.fields) == 0 {
+			f.state = formStateCalling
+			return f, f.invokeRPC(), true
+		}
+		f.nextField()
+		return f, nil, true
+	}
+	return f, nil, false
 }
 
 func (f *Form) updateFocusedField(msg tea.Msg) tea.Cmd {
@@ -166,23 +198,24 @@ func (f *Form) View() string {
 	b.WriteString(labelStyle.Render(fmt.Sprintf("Response: %s", f.method.Output().FullName())))
 	b.WriteString("\n\n")
 
-	if f.submitted {
-		b.WriteString(headerStyle.Render("Form Submitted!"))
+	switch f.state {
+	case formStateCalling:
+		b.WriteString(labelStyle.Render("Calling..."))
 		b.WriteString("\n")
-
-		b.WriteString("Values:\n")
-
-		mp := f.submittedValues()
-
-		enc := json.NewEncoder(&b)
-		enc.SetIndent("", "  ")
-		err := enc.Encode(mp)
-		if err != nil {
-			return fmt.Sprintf("Error encoding submitted values: %v", err)
+	case formStateResult:
+		if f.responseErr != nil {
+			b.WriteString(headerStyle.Render("Error"))
+			b.WriteString("\n\n")
+			b.WriteString(labelStyle.Render(f.responseErr.Error()))
+		} else {
+			b.WriteString(headerStyle.Render("Response"))
+			b.WriteString("\n\n")
+			b.WriteString(f.response)
 		}
-
-	} else {
+	case formStateInput:
 		b.WriteString(f.renderFields())
+	default:
+		panic(fmt.Sprintf("unknown state - non exhaustive switch for form state: %d", f.state))
 	}
 
 	return b.String()
@@ -241,26 +274,35 @@ func (f *Form) SetSize(width, height int) {
 	}
 }
 
-func (f *Form) submittedValues() map[string]string {
-
-	mp := make(map[string]string)
+func (f *Form) submittedValues() map[string]any {
+	mp := make(map[string]any)
 	for _, field := range f.fields {
-		var valStr string
+		var val any
 		switch field.kind {
 		case FieldText:
-			valStr = field.textInput.Value()
+			val = field.textInput.Value()
 		case FieldEnum, FieldBool:
 			if item := field.enumPicker.SelectedItem(); item != nil {
-				valStr = item.value
+				val = item.value
 			}
 		}
-
-		mp[field.name] = valStr
-
+		mp[field.name] = val
 	}
-
 	return mp
+}
 
+func (f *Form) invokeRPC() tea.Cmd {
+	methodFullName := string(f.method.FullName())
+	request := f.submittedValues()
+	client := f.client
+
+	return func() tea.Msg {
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
+
+		response, err := client.InvokeRPC(ctx, methodFullName, request)
+		return rpcResultMsg{response: response, err: err}
+	}
 }
 
 func (f *Form) buildFields() {
