@@ -39,7 +39,7 @@ func NewForm(method protoreflect.MethodDescriptor, client *grpc.Client) Form {
 }
 
 func (f *Form) Init() tea.Cmd {
-	if len(f.fields) > 0 && f.fields[0].Kind == FieldText {
+	if len(f.fields) > 0 && f.fields[0].kind == FieldText {
 		return f.fields[0].textInput.Focus()
 	}
 	return nil
@@ -53,14 +53,39 @@ func (f *Form) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
+		case "j":
+			if f.focusIndex > 0 && f.fields[f.focusIndex].kind != FieldText {
+				f.nextField()
+				return f, nil
+			}
 		case "tab", "down":
 			f.nextField()
 			return f, nil
+		case "k":
+			if f.focusIndex > 0 && f.fields[f.focusIndex].kind != FieldText {
+				f.prevField()
+				return f, nil
+			}
 		case "shift+tab", "up":
 			f.prevField()
 			return f, nil
+		case "left", "h":
+			if len(f.fields) > 0 {
+				field := &f.fields[f.focusIndex]
+				if field.kind == FieldEnum || field.kind == FieldBool {
+					field.enumPicker.Prev()
+					return f, nil
+				}
+			}
+		case "right", "l":
+			if len(f.fields) > 0 {
+				field := &f.fields[f.focusIndex]
+				if field.kind == FieldEnum || field.kind == FieldBool {
+					field.enumPicker.Next()
+					return f, nil
+				}
+			}
 		case "enter":
-			// Submit if on last field, otherwise move to next
 			if f.focusIndex == len(f.fields)-1 {
 				f.submitted = true
 				return f, nil
@@ -70,7 +95,6 @@ func (f *Form) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 
-	// Forward message to focused field
 	return f, f.updateFocusedField(msg)
 }
 
@@ -80,14 +104,10 @@ func (f *Form) updateFocusedField(msg tea.Msg) tea.Cmd {
 	}
 
 	field := &f.fields[f.focusIndex]
-	switch field.Kind {
+	switch field.kind {
 	case FieldText:
 		var cmd tea.Cmd
 		field.textInput, cmd = field.textInput.Update(msg)
-		return cmd
-	case FieldEnum, FieldBool:
-		var cmd tea.Cmd
-		field.enumList, cmd = field.enumList.Update(msg)
 		return cmd
 	}
 	return nil
@@ -119,7 +139,7 @@ func (f *Form) focusField(idx int) {
 		return
 	}
 	field := &f.fields[idx]
-	switch field.Kind {
+	switch field.kind {
 	case FieldText:
 		field.textInput.Focus()
 	}
@@ -130,7 +150,7 @@ func (f *Form) blurField(idx int) {
 		return
 	}
 	field := &f.fields[idx]
-	switch field.Kind {
+	switch field.kind {
 	case FieldText:
 		field.textInput.Blur()
 	}
@@ -176,19 +196,13 @@ func (f *Form) renderFields() string {
 		}
 		b.WriteString("\n")
 
-		switch field.Kind {
+		switch field.kind {
 		case FieldText:
 			b.WriteString("  ")
 			b.WriteString(field.textInput.View())
 		case FieldEnum, FieldBool:
-			// Show selected value inline instead of full list
-			item := field.enumList.SelectedItem()
-			enumItem, ok := item.(EnumItem)
-			if !ok {
-				continue
-			}
 			b.WriteString("  ")
-			b.WriteString(fmt.Sprintf("< %s >", enumItem.Name))
+			b.WriteString(field.enumPicker.View())
 		}
 		b.WriteString("\n\n")
 	}
@@ -200,7 +214,7 @@ func (f *Form) renderFields() string {
 	}
 
 	b.WriteString("\n")
-	b.WriteString(labelStyle.Render("tab: next • shift+tab: prev • enter: submit"))
+	b.WriteString(labelStyle.Render("tab/↓/j: next • shift+tab/↑/k: prev • left/h: prev opt • right/l: next opt • enter: submit"))
 
 	return b.String()
 }
@@ -210,7 +224,7 @@ func (f *Form) SetSize(width, height int) {
 	f.height = height
 
 	for i := range f.fields {
-		if f.fields[i].Kind == FieldText {
+		if f.fields[i].kind == FieldText {
 			f.fields[i].textInput.Width = width - 10
 		}
 	}
@@ -223,14 +237,12 @@ func (f *Form) renderSubmittedValues() string {
 	mp := make(map[string]string)
 	for _, field := range f.fields {
 		var valStr string
-		switch field.Kind {
+		switch field.kind {
 		case FieldText:
 			valStr = field.textInput.Value()
 		case FieldEnum, FieldBool:
-			if item := field.enumList.SelectedItem(); item != nil {
-				if enumItem, ok := item.(EnumItem); ok {
-					valStr = enumItem.Value
-				}
+			if item := field.enumPicker.SelectedItem(); item != nil {
+				valStr = item.value
 			}
 		}
 
@@ -281,14 +293,14 @@ func (f *Form) createFormField(field protoreflect.FieldDescriptor) *Field {
 	case protoreflect.Int32Kind, protoreflect.Int64Kind,
 		protoreflect.Sint32Kind, protoreflect.Sint64Kind,
 		protoreflect.Sfixed32Kind, protoreflect.Sfixed64Kind:
-		return NewTextField(name, "Enter integer...", 64, ValidateInt)
+		return NewTextField(name, "Enter integer...", 64, validateInt)
 
 	case protoreflect.Uint32Kind, protoreflect.Uint64Kind,
 		protoreflect.Fixed32Kind, protoreflect.Fixed64Kind:
-		return NewTextField(name, "Enter positive integer...", 64, ValidateUint)
+		return NewTextField(name, "Enter positive integer...", 64, validateUint)
 
 	case protoreflect.FloatKind, protoreflect.DoubleKind:
-		return NewTextField(name, "Enter number...", 64, ValidateFloat)
+		return NewTextField(name, "Enter number...", 64, validateFloat)
 
 	case protoreflect.EnumKind:
 		return NewEnumField(name, field)

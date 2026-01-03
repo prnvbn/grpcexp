@@ -4,37 +4,27 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/textinput"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
-type FieldKind int
+type fieldKind int
 
 const (
-	FieldText FieldKind = iota
+	FieldText fieldKind = iota
 	FieldBool
 	FieldEnum
 )
 
 type Field struct {
 	name string
-	Kind FieldKind
+	kind fieldKind
 
-	textInput textinput.Model // for text fields
-	enumList  list.Model      // for enum and bool fields
+	textInput  textinput.Model // for text fields
+	enumPicker enumPicker      // for enum and bool fields
 
 	validate func(string) error
 }
-
-type EnumItem struct {
-	Name  string
-	Value string
-}
-
-func (i EnumItem) Title() string       { return i.Name }
-func (i EnumItem) Description() string { return "" }
-func (i EnumItem) FilterValue() string { return i.Name }
 
 func NewTextField(name, placeholder string, charLimit int, validate func(string) error) *Field {
 	ti := textinput.New()
@@ -42,32 +32,22 @@ func NewTextField(name, placeholder string, charLimit int, validate func(string)
 	ti.CharLimit = charLimit
 	return &Field{
 		name:      name,
-		Kind:      FieldText,
+		kind:      FieldText,
 		textInput: ti,
 		validate:  validate,
 	}
 }
 
 func NewBoolField(name string) *Field {
-	items := []list.Item{
-		EnumItem{Name: "false", Value: "false"},
-		EnumItem{Name: "true", Value: "true"},
+	items := []enumItem{
+		{name: "false", value: "false"},
+		{name: "true", value: "true"},
 	}
 
-	delegate := list.NewDefaultDelegate()
-	delegate.ShowDescription = false
-
-	l := list.New(items, delegate, 30, 5)
-	l.SetShowTitle(false)
-	l.SetShowStatusBar(false)
-	l.SetShowFilter(false)
-	l.SetShowHelp(false)
-	l.SetShowPagination(false)
-
 	return &Field{
-		name:     name,
-		Kind:     FieldBool,
-		enumList: l,
+		name:       name,
+		kind:       FieldBool,
+		enumPicker: newEnumPicker(items),
 	}
 }
 
@@ -75,30 +55,23 @@ func NewEnumField(name string, field protoreflect.FieldDescriptor) *Field {
 	enumDesc := field.Enum()
 	values := enumDesc.Values()
 
-	items := make([]list.Item, values.Len())
+	items := make([]enumItem, values.Len())
 	for i := 0; i < values.Len(); i++ {
 		enumVal := values.Get(i)
-		items[i] = EnumItem{Name: string(enumVal.Name()), Value: string(enumVal.Number())}
+		items[i] = enumItem{
+			name:  string(enumVal.Name()),
+			value: fmt.Sprintf("%d", enumVal.Number()),
+		}
 	}
 
-	delegate := list.NewDefaultDelegate()
-	delegate.ShowDescription = false
-
-	l := list.New(items, delegate, 30, 5)
-	l.SetShowTitle(false)
-	l.SetShowStatusBar(false)
-	l.SetShowFilter(false)
-	l.SetShowHelp(false)
-	l.SetShowPagination(false)
-
 	return &Field{
-		name:     name,
-		Kind:     FieldEnum,
-		enumList: l,
+		name:       name,
+		kind:       FieldEnum,
+		enumPicker: newEnumPicker(items),
 	}
 }
 
-func ValidateInt(s string) error {
+func validateInt(s string) error {
 	if s == "" {
 		return nil
 	}
@@ -109,7 +82,7 @@ func ValidateInt(s string) error {
 	return nil
 }
 
-func ValidateUint(s string) error {
+func validateUint(s string) error {
 	if s == "" {
 		return nil
 	}
@@ -120,7 +93,7 @@ func ValidateUint(s string) error {
 	return nil
 }
 
-func ValidateFloat(s string) error {
+func validateFloat(s string) error {
 	if s == "" {
 		return nil
 	}
