@@ -75,6 +75,10 @@ type Message struct {
 	Message       string                 `protobuf:"bytes,1,opt,name=message,proto3" json:"message,omitempty"`
 	Boolean       bool                   `protobuf:"varint,2,opt,name=boolean,proto3" json:"boolean,omitempty"`
 	Enum          Message_Enum           `protobuf:"varint,3,opt,name=enum,proto3,enum=echo.v1.Message_Enum" json:"enum,omitempty"`
+	Int32Value    int32                  `protobuf:"varint,4,opt,name=int32_value,json=int32Value,proto3" json:"int32_value,omitempty"`
+	Int64Value    int64                  `protobuf:"varint,5,opt,name=int64_value,json=int64Value,proto3" json:"int64_value,omitempty"`
+	FloatValue    float32                `protobuf:"fixed32,6,opt,name=float_value,json=floatValue,proto3" json:"float_value,omitempty"`
+	DoubleValue   float64                `protobuf:"fixed64,7,opt,name=double_value,json=doubleValue,proto3" json:"double_value,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -130,15 +134,50 @@ func (x *Message) GetEnum() Message_Enum {
 	return Message_ENUM_UNSPECIFIED
 }
 
+func (x *Message) GetInt32Value() int32 {
+	if x != nil {
+		return x.Int32Value
+	}
+	return 0
+}
+
+func (x *Message) GetInt64Value() int64 {
+	if x != nil {
+		return x.Int64Value
+	}
+	return 0
+}
+
+func (x *Message) GetFloatValue() float32 {
+	if x != nil {
+		return x.FloatValue
+	}
+	return 0
+}
+
+func (x *Message) GetDoubleValue() float64 {
+	if x != nil {
+		return x.DoubleValue
+	}
+	return 0
+}
+
 var File_cmd_testserver_echo_echo_proto protoreflect.FileDescriptor
 
 const file_cmd_testserver_echo_echo_proto_rawDesc = "" +
 	"\n" +
-	"\x1ecmd/testserver/echo/echo.proto\x12\aecho.v1\"\xaa\x01\n" +
+	"\x1ecmd/testserver/echo/echo.proto\x12\aecho.v1\"\xb0\x02\n" +
 	"\aMessage\x12\x18\n" +
 	"\amessage\x18\x01 \x01(\tR\amessage\x12\x18\n" +
 	"\aboolean\x18\x02 \x01(\bR\aboolean\x12)\n" +
-	"\x04enum\x18\x03 \x01(\x0e2\x15.echo.v1.Message.EnumR\x04enum\"@\n" +
+	"\x04enum\x18\x03 \x01(\x0e2\x15.echo.v1.Message.EnumR\x04enum\x12\x1f\n" +
+	"\vint32_value\x18\x04 \x01(\x05R\n" +
+	"int32Value\x12\x1f\n" +
+	"\vint64_value\x18\x05 \x01(\x03R\n" +
+	"int64Value\x12\x1f\n" +
+	"\vfloat_value\x18\x06 \x01(\x02R\n" +
+	"floatValue\x12!\n" +
+	"\fdouble_value\x18\a \x01(\x01R\vdoubleValue\"@\n" +
 	"\x04Enum\x12\x14\n" +
 	"\x10ENUM_UNSPECIFIED\x10\x00\x12\x10\n" +
 	"\fENUM_VALUE_1\x10\x01\x12\x10\n" +
