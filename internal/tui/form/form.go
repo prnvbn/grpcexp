@@ -46,7 +46,9 @@ func NewForm(method protoreflect.MethodDescriptor, client *grpc.Client) Form {
 		method: method,
 		client: client,
 	}
-	f.buildFields()
+
+	inputMsgDesc := f.method.Input()
+	f.buildFields(inputMsgDesc.Fields(), nil)
 
 	if len(f.fields) > 0 {
 		f.focusField(0)
@@ -191,8 +193,8 @@ func (f *Form) blurField(idx int) {
 func (f *Form) View() string {
 	var b strings.Builder
 
-	b.WriteString(headerStyle.Render(string(f.method.Name())))
-	b.WriteString(labelStyle.Render(fmt.Sprintf(" (%s → %s)", f.method.Input().Name(), f.method.Output().Name())))
+	header := fmt.Sprintf("%s(%s) -> %s", f.method.FullName(), f.method.Input().FullName(), f.method.Output().FullName())
+	b.WriteString(headerStyle.Render(header))
 	b.WriteString("\n\n")
 
 	switch f.state {
@@ -226,15 +228,26 @@ func (f *Form) renderFields() string {
 		b.WriteString("\n")
 	}
 
+	var lastSeenParent string
 	for i, field := range f.fields {
 		isFocused := i == f.focusIndex
+		depth := field.Depth()
 
-		// Build the field line: prefix + label: input
+		if depth > 0 {
+			parent := field.path[depth-1]
+			if parent != lastSeenParent {
+				b.WriteString(labelStyle.Render("  " + strings.Repeat("  ", depth-1) + parent + ":"))
+				b.WriteString("\n")
+				lastSeenParent = parent
+			}
+		}
+
+		indent := strings.Repeat("  ", depth)
 		var prefix string
 		if isFocused {
-			prefix = "> "
+			prefix = ">" + indent + " "
 		} else {
-			prefix = "  "
+			prefix = " " + indent + " "
 		}
 
 		var inputView string
@@ -245,10 +258,12 @@ func (f *Form) renderFields() string {
 			inputView = field.enumPicker.View()
 		}
 
+		fieldName := field.path[len(field.path)-1]
+
 		if isFocused {
-			b.WriteString(focusedLabelStyle.Render(prefix + field.name + ": "))
+			b.WriteString(focusedLabelStyle.Render(prefix + fieldName + ": "))
 		} else {
-			b.WriteString(labelStyle.Render(prefix + field.name + ": "))
+			b.WriteString(labelStyle.Render(prefix + fieldName + ": "))
 		}
 		b.WriteString(inputView)
 		b.WriteString("\n")
@@ -278,7 +293,7 @@ func (f *Form) SetSize(width, height int) {
 }
 
 func (f *Form) submittedValues() map[string]any {
-	mp := make(map[string]any)
+	root := make(map[string]any)
 	for _, field := range f.fields {
 		var val any
 		switch field.kind {
@@ -289,9 +304,25 @@ func (f *Form) submittedValues() map[string]any {
 				val = item.value
 			}
 		}
-		mp[field.name] = val
+		setNestedValue(root, field.path, val)
 	}
-	return mp
+	return root
+}
+
+func setNestedValue(m map[string]any, path []string, value any) {
+	if len(path) == 0 {
+		return
+	}
+
+	for i := 0; i < len(path)-1; i++ {
+		key := path[i]
+		if _, exists := m[key]; !exists {
+			m[key] = make(map[string]any)
+		}
+		m = m[key].(map[string]any)
+	}
+
+	m[path[len(path)-1]] = value
 }
 
 func (f *Form) invokeRPC() tea.Cmd {
@@ -308,53 +339,61 @@ func (f *Form) invokeRPC() tea.Cmd {
 	}
 }
 
-func (f *Form) buildFields() {
-	inputMsgDesc := f.method.Input()
-	fields := inputMsgDesc.Fields()
-
+func (f *Form) buildFields(fields protoreflect.FieldDescriptors, prefix []string) {
 	for i := 0; i < fields.Len(); i++ {
 		field := fields.Get(i)
+		fieldName := string(field.Name())
 
-		// todo! add support
-		if field.IsList() || field.IsMap() || field.Kind() == protoreflect.MessageKind {
-			f.unsupportedFields = append(f.unsupportedFields, string(field.Name()))
+		currentPath := append(append([]string{}, prefix...), fieldName)
+		fullName := strings.Join(currentPath, ".")
+
+		// todo: add support for lists and maps
+		if field.IsList() || field.IsMap() {
+			f.unsupportedFields = append(f.unsupportedFields, fullName)
 			continue
 		}
 
-		formField := f.createFormField(field)
+		if field.Kind() == protoreflect.MessageKind {
+			nestedFields := field.Message().Fields()
+			f.buildFields(nestedFields, currentPath)
+			continue
+		}
+
+		formField := f.createFormField(field, currentPath)
 		if formField != nil {
 			f.fields = append(f.fields, *formField)
 		}
 	}
 }
 
-func (f *Form) createFormField(field protoreflect.FieldDescriptor) *Field {
+func (f *Form) createFormField(field protoreflect.FieldDescriptor, path []string) *Field {
 	name := string(field.Name())
+	displayName := strings.Join(path, ".")
 
 	switch field.Kind() {
 	case protoreflect.StringKind:
-		return NewTextField(name, fmt.Sprintf("Enter %s...", name), 256, nil)
+		return NewTextField(displayName, path, fmt.Sprintf("Enter %s...", name), 256, nil)
 
 	case protoreflect.BoolKind:
-		return NewBoolField(name)
+		return NewBoolField(displayName, path)
 
 	case protoreflect.Int32Kind, protoreflect.Int64Kind,
 		protoreflect.Sint32Kind, protoreflect.Sint64Kind,
 		protoreflect.Sfixed32Kind, protoreflect.Sfixed64Kind:
-		return NewTextField(name, "Enter integer...", 64, validateInt)
+		return NewTextField(displayName, path, "Enter integer...", 64, validateInt)
 
 	case protoreflect.Uint32Kind, protoreflect.Uint64Kind,
 		protoreflect.Fixed32Kind, protoreflect.Fixed64Kind:
-		return NewTextField(name, "Enter positive integer...", 64, validateUint)
+		return NewTextField(displayName, path, "Enter positive integer...", 64, validateUint)
 
 	case protoreflect.FloatKind, protoreflect.DoubleKind:
-		return NewTextField(name, "Enter number...", 64, validateFloat)
+		return NewTextField(displayName, path, "Enter number...", 64, validateFloat)
 
 	case protoreflect.EnumKind:
-		return NewEnumField(name, field)
+		return NewEnumField(displayName, path, field)
 
 	case protoreflect.BytesKind:
-		return NewTextField(name, "Enter hex bytes (e.g., deadbeef)...", 512, nil)
+		return NewTextField(displayName, path, "Enter hex bytes (e.g., deadbeef)...", 512, nil)
 
 	default:
 		return nil

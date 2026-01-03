@@ -18,28 +18,37 @@ const (
 
 type Field struct {
 	name string
+	path []string
 	kind fieldKind
 
-	textInput  textinput.Model // for text fields
-	enumPicker enumPicker      // for enum and bool fields
+	textInput  textinput.Model
+	enumPicker enumPicker
 
 	validate func(string) error
 }
 
-func NewTextField(name, placeholder string, charLimit int, validate func(string) error) *Field {
+func (f *Field) Depth() int {
+	if len(f.path) == 0 {
+		return 0
+	}
+	return len(f.path) - 1
+}
+
+func NewTextField(name string, path []string, placeholder string, charLimit int, validate func(string) error) *Field {
 	ti := textinput.New()
 	ti.Placeholder = placeholder
 	ti.CharLimit = charLimit
 	ti.Prompt = ""
 	return &Field{
 		name:      name,
+		path:      path,
 		kind:      FieldText,
 		textInput: ti,
 		validate:  validate,
 	}
 }
 
-func NewBoolField(name string) *Field {
+func NewBoolField(name string, path []string) *Field {
 	items := []enumItem{
 		{name: "false", value: "false"},
 		{name: "true", value: "true"},
@@ -47,12 +56,13 @@ func NewBoolField(name string) *Field {
 
 	return &Field{
 		name:       name,
+		path:       path,
 		kind:       FieldBool,
 		enumPicker: newEnumPicker(items),
 	}
 }
 
-func NewEnumField(name string, field protoreflect.FieldDescriptor) *Field {
+func NewEnumField(name string, path []string, field protoreflect.FieldDescriptor) *Field {
 	enumDesc := field.Enum()
 	values := enumDesc.Values()
 
@@ -67,6 +77,7 @@ func NewEnumField(name string, field protoreflect.FieldDescriptor) *Field {
 
 	return &Field{
 		name:       name,
+		path:       path,
 		kind:       FieldEnum,
 		enumPicker: newEnumPicker(items),
 	}
