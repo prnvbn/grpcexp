@@ -1,7 +1,9 @@
 package grpc
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"sort"
 
@@ -21,6 +23,7 @@ type Config struct {
 
 type Client struct {
 	source grpcurl.DescriptorSource
+	conn   *grpc.ClientConn
 }
 
 func NewClient(ctx context.Context, config Config) (*Client, error) {
@@ -36,7 +39,39 @@ func NewClient(ctx context.Context, config Config) (*Client, error) {
 	refClient.AllowMissingFileDescriptors()
 	source := grpcurl.DescriptorSourceFromServer(ctx, refClient) //todo: add support for files as well?
 
-	return &Client{source: source}, nil
+	return &Client{source: source, conn: cc}, nil
+}
+
+func (c *Client) InvokeRPC(ctx context.Context, methodFullName string, request map[string]any) (string, error) {
+	jsonData, err := json.Marshal(request)
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal request: %w", err)
+	}
+
+	requestData := bytes.NewReader(jsonData)
+	rf, formatter, err := grpcurl.RequestParserAndFormatter(grpcurl.FormatJSON, c.source, requestData, grpcurl.FormatOptions{})
+	if err != nil {
+		return "", fmt.Errorf("failed to create request parser: %w", err)
+	}
+
+	var responseBuf bytes.Buffer
+
+	handler := &grpcurl.DefaultEventHandler{
+		Out:            &responseBuf,
+		Formatter:      formatter,
+		VerbosityLevel: 0,
+	}
+
+	err = grpcurl.InvokeRPC(ctx, c.source, c.conn, methodFullName, nil, handler, rf.Next)
+	if err != nil {
+		return "", fmt.Errorf("RPC invocation failed: %w", err)
+	}
+
+	if handler.Status.Code() != 0 {
+		return "", fmt.Errorf("RPC error: %s", handler.Status.Message())
+	}
+
+	return responseBuf.String(), nil
 }
 
 func (c *Client) ListServices() ([]string, error) {
