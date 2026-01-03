@@ -2,8 +2,11 @@ package grpc
 
 import (
 	"context"
+	"fmt"
+	"sort"
 
 	"github.com/fullstorydev/grpcurl"
+	"github.com/jhump/protoreflect/desc"
 	"github.com/jhump/protoreflect/grpcreflect"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -16,7 +19,7 @@ type Config struct {
 }
 
 type Client struct {
-	client *grpcreflect.Client
+	*grpcreflect.Client
 }
 
 func NewClient(ctx context.Context, config Config) (*Client, error) {
@@ -30,9 +33,34 @@ func NewClient(ctx context.Context, config Config) (*Client, error) {
 
 	refClient := grpcreflect.NewClientAuto(ctx, cc)
 	refClient.AllowMissingFileDescriptors()
-	return &Client{client: refClient}, nil
+	return &Client{refClient}, nil
 }
 
 func (c *Client) ListServices() ([]string, error) {
-	return c.client.ListServices()
+	services, err := c.Client.ListServices()
+	if err != nil {
+		return nil, err
+	}
+	sort.Strings(services)
+	return services, nil
+}
+
+func (c *Client) ListMethods(fullyQualifiedName string) ([]string, error) {
+	file, err := c.FileContainingSymbol(fullyQualifiedName)
+	if err != nil {
+		return nil, err
+	}
+
+	descriptor := file.FindSymbol(fullyQualifiedName)
+	sd, ok := descriptor.(*desc.ServiceDescriptor)
+	if !ok {
+		return nil, fmt.Errorf("Service Descriptor not found for %s", fullyQualifiedName)
+	}
+
+	methods := make([]string, 0, len(sd.GetMethods()))
+	for _, method := range sd.GetMethods() {
+		methods = append(methods, method.GetFullyQualifiedName())
+	}
+	sort.Strings(methods)
+	return methods, nil
 }

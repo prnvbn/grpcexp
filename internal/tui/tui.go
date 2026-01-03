@@ -1,6 +1,9 @@
 package tui
 
 import (
+	"fmt"
+	"os"
+
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/prnvbn/grpcexp/internal/grpc"
 )
@@ -38,6 +41,12 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if item, ok := m.servicesList.SelectedItem(); ok {
 				m.servicesList.SetSelected(item.name)
 				// TODO: update tui to show the methods for the selected service
+				methods, err := m.grpcClient.ListMethods(item.name)
+				if err != nil {
+					fmt.Fprintf(os.Stderr, "error listing methods: %v\n", err)
+					return m, tea.Quit
+				}
+				_ = methods // TODO: use methods
 			}
 		}
 	case tea.WindowSizeMsg:

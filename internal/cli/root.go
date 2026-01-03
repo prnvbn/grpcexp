@@ -19,10 +19,11 @@ var (
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "grpcexp",
-	Short: "grpc explorer",
-	Long:  `An interactive explorer for interacting with grpc servers that implement reflection - https://grpc.io/docs/guides/reflection/`,
-	RunE:  run,
+	Use:          "grpcexp",
+	Short:        "grpc explorer",
+	Long:         `An interactive explorer for interacting with grpc servers that implement reflection - https://grpc.io/docs/guides/reflection/`,
+	RunE:         run,
+	SilenceUsage: true,
 }
 
 func run(cmd *cobra.Command, args []string) error {
