@@ -10,6 +10,7 @@ import (
 	"github.com/jhump/protoreflect/grpcreflect"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
 type Config struct {
@@ -37,15 +38,15 @@ func NewClient(ctx context.Context, config Config) (*Client, error) {
 }
 
 func (c *Client) ListServices() ([]string, error) {
-	services, err := c.Client.ListServices()
+	svcNames, err := c.Client.ListServices()
 	if err != nil {
 		return nil, err
 	}
-	sort.Strings(services)
-	return services, nil
+	sort.Strings(svcNames)
+	return svcNames, nil
 }
 
-func (c *Client) ListMethods(fullyQualifiedName string) ([]string, error) {
+func (c *Client) ListMethods(fullyQualifiedName string) ([]protoreflect.MethodDescriptor, error) {
 	file, err := c.FileContainingSymbol(fullyQualifiedName)
 	if err != nil {
 		return nil, err
@@ -57,10 +58,14 @@ func (c *Client) ListMethods(fullyQualifiedName string) ([]string, error) {
 		return nil, fmt.Errorf("Service Descriptor not found for %s", fullyQualifiedName)
 	}
 
-	methods := make([]string, 0, len(sd.GetMethods()))
+	methods := make([]protoreflect.MethodDescriptor, 0, len(sd.GetMethods()))
 	for _, method := range sd.GetMethods() {
-		methods = append(methods, method.GetFullyQualifiedName())
+		methods = append(methods, method.UnwrapMethod())
 	}
-	sort.Strings(methods)
+
+	sort.Slice(methods, func(i, j int) bool {
+		return methods[i].FullName() < methods[j].FullName()
+	})
+
 	return methods, nil
 }
