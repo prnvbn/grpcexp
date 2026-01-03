@@ -6,11 +6,11 @@ import (
 	"os"
 	"time"
 
-	"github.com/fullstorydev/grpcurl"
-	"github.com/jhump/protoreflect/grpcreflect"
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/prnvbn/grpcexp/internal/grpc"
+	"github.com/prnvbn/grpcexp/internal/tui"
 	"github.com/spf13/cobra"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 var (
@@ -36,27 +36,23 @@ func run(cmd *cobra.Command, args []string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	// todo: set this based on the flags
-	var creds credentials.TransportCredentials
-
-	var opts []grpc.DialOption
-	grpcexpUA := "grpcexp/" + version
-	opts = append(opts, grpc.WithUserAgent(grpcexpUA))
-	cc, err := grpcurl.BlockingDial(ctx, "", target, creds, opts...)
+	grpcClient, err := grpc.NewClient(ctx, grpc.Config{
+		Target:    target,
+		Creds:     insecure.NewCredentials(), //todo: make configureable
+		UserAgent: "grpcexp/" + version,
+	})
 	if err != nil {
 		return err
 	}
 
-	refClient := grpcreflect.NewClientAuto(context.Background(), cc)
-	refClient.AllowMissingFileDescriptors()
-
-	services, err := refClient.ListServices()
+	m, err := tui.NewModel(grpcClient)
 	if err != nil {
 		return err
 	}
 
-	for _, service := range services {
-		fmt.Println(service)
+	p := tea.NewProgram(m, tea.WithAltScreen())
+	if _, err := p.Run(); err != nil {
+		return err
 	}
 
 	return nil
