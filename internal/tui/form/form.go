@@ -51,9 +51,9 @@ func NewForm(method protoreflect.MethodDescriptor, client *grpc.Client) Form {
 	inputMsgDesc := f.method.Input()
 	f.buildFields(inputMsgDesc.Fields(), nil)
 
-	if len(f.fields) > 0 {
-		f.focusField(0)
-	}
+	f.fields = append(f.fields, Field{kind: FieldSubmit})
+
+	f.focusField(0)
 
 	return f
 }
@@ -101,59 +101,55 @@ func (f *Form) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return f, f.updateFocusedField(msg)
 }
 
+func (f *Form) focusedField() *Field {
+	return &f.fields[f.focusIndex]
+}
+
 func (f *Form) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+	field := f.focusedField()
+
 	switch msg.String() {
-	case "j":
-		if f.focusIndex > 0 && f.fields[f.focusIndex].kind != FieldText {
-			f.nextField()
+	case "j", "k":
+		if field.kind != FieldText {
+			if msg.String() == "j" {
+				f.nextField()
+			} else {
+				f.prevField()
+			}
 			return f, nil, true
 		}
 	case "tab", "down":
 		f.nextField()
 		return f, nil, true
-	case "k":
-		if f.focusIndex > 0 && f.fields[f.focusIndex].kind != FieldText {
-			f.prevField()
-			return f, nil, true
-		}
 	case "shift+tab", "up":
 		f.prevField()
 		return f, nil, true
-	case "left", "h":
-		if len(f.fields) > 0 {
-			field := &f.fields[f.focusIndex]
-			if field.kind == FieldEnum || field.kind == FieldBool {
-				field.enumPicker.Prev()
-				return f, nil, true
-			}
-		}
-	case "right", "l":
-		if len(f.fields) > 0 {
-			field := &f.fields[f.focusIndex]
-			if field.kind == FieldEnum || field.kind == FieldBool {
-				field.enumPicker.Next()
-				return f, nil, true
-			}
-		}
 	case "enter":
-		if f.focusIndex == len(f.fields)-1 || len(f.fields) == 0 {
+		if field.kind == FieldSubmit {
 			f.state = formStateCalling
 			return f, f.invokeRPC(), true
 		}
 		f.nextField()
 		return f, nil, true
+	case "left", "h", "right", "l":
+		if field.kind == FieldEnum || field.kind == FieldBool {
+			if msg.String() == "left" || msg.String() == "h" {
+				field.enumPicker.Prev()
+			} else {
+				field.enumPicker.Next()
+			}
+			return f, nil, true
+		}
+	case "ctrl+enter":
+		f.state = formStateCalling
+		return f, f.invokeRPC(), true
 	}
 	return f, nil, false
 }
 
 func (f *Form) updateFocusedField(msg tea.Msg) tea.Cmd {
-	if len(f.fields) == 0 {
-		return nil
-	}
-
-	field := &f.fields[f.focusIndex]
-	switch field.kind {
-	case FieldText:
+	field := f.focusedField()
+	if field.kind == FieldText {
 		var cmd tea.Cmd
 		field.textInput, cmd = field.textInput.Update(msg)
 		return cmd
@@ -162,18 +158,12 @@ func (f *Form) updateFocusedField(msg tea.Msg) tea.Cmd {
 }
 
 func (f *Form) nextField() {
-	if len(f.fields) == 0 {
-		return
-	}
 	f.blurField(f.focusIndex)
 	f.focusIndex = (f.focusIndex + 1) % len(f.fields)
 	f.focusField(f.focusIndex)
 }
 
 func (f *Form) prevField() {
-	if len(f.fields) == 0 {
-		return
-	}
 	f.blurField(f.focusIndex)
 	f.focusIndex--
 	if f.focusIndex < 0 {
@@ -239,7 +229,8 @@ func (f *Form) View() string {
 func (f *Form) renderFields() string {
 	var b strings.Builder
 
-	if len(f.fields) == 0 {
+	// Check if we only have the submit field
+	if len(f.fields) == 1 && f.fields[0].kind == FieldSubmit {
 		b.WriteString(labelStyle.Render("No input fields."))
 		b.WriteString("\n")
 	}
@@ -247,8 +238,23 @@ func (f *Form) renderFields() string {
 	var lastSeenParent string
 	for i, field := range f.fields {
 		isFocused := i == f.focusIndex
-		depth := field.Depth()
 
+		if field.kind == FieldSubmit {
+			if len(f.unsupportedFields) > 0 {
+				b.WriteString(labelStyle.Render(fmt.Sprintf("(unsupported: %s)",
+					strings.Join(f.unsupportedFields, ", "))))
+				b.WriteString("\n")
+			}
+			b.WriteString("\n")
+			if isFocused {
+				b.WriteString(focusedLabelStyle.Render("> [Submit]"))
+			} else {
+				b.WriteString(labelStyle.Render("  [Submit]"))
+			}
+			continue
+		}
+
+		depth := field.Depth()
 		if depth > 0 {
 			parent := field.path[depth-1]
 			if parent != lastSeenParent {
@@ -285,14 +291,8 @@ func (f *Form) renderFields() string {
 		b.WriteString("\n")
 	}
 
-	if len(f.unsupportedFields) > 0 {
-		b.WriteString(labelStyle.Render(fmt.Sprintf("(unsupported: %s)",
-			strings.Join(f.unsupportedFields, ", "))))
-		b.WriteString("\n")
-	}
-
-	b.WriteString("\n")
-	b.WriteString(labelStyle.Render("↑/↓: navigate • ←/→: options • enter: submit"))
+	b.WriteString("\n\n")
+	b.WriteString(labelStyle.Render("↑/↓/enter: navigate • ←/→: options"))
 
 	return b.String()
 }
@@ -311,6 +311,9 @@ func (f *Form) SetSize(width, height int) {
 func (f *Form) submittedValues() map[string]any {
 	root := make(map[string]any)
 	for _, field := range f.fields {
+		if field.kind == FieldSubmit {
+			continue
+		}
 		var val any
 		switch field.kind {
 		case FieldText:

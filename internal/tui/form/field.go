@@ -14,6 +14,7 @@ const (
 	FieldText fieldKind = iota
 	FieldBool
 	FieldEnum
+	FieldSubmit
 )
 
 type Field struct {
