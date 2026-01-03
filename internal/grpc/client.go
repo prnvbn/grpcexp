@@ -20,7 +20,7 @@ type Config struct {
 }
 
 type Client struct {
-	*grpcreflect.Client
+	source grpcurl.DescriptorSource
 }
 
 func NewClient(ctx context.Context, config Config) (*Client, error) {
@@ -34,11 +34,13 @@ func NewClient(ctx context.Context, config Config) (*Client, error) {
 
 	refClient := grpcreflect.NewClientAuto(ctx, cc)
 	refClient.AllowMissingFileDescriptors()
-	return &Client{refClient}, nil
+	source := grpcurl.DescriptorSourceFromServer(ctx, refClient) //todo: add support for files as well?
+
+	return &Client{source: source}, nil
 }
 
 func (c *Client) ListServices() ([]string, error) {
-	svcNames, err := c.Client.ListServices()
+	svcNames, err := c.source.ListServices()
 	if err != nil {
 		return nil, err
 	}
@@ -47,12 +49,11 @@ func (c *Client) ListServices() ([]string, error) {
 }
 
 func (c *Client) ListMethods(fullyQualifiedName string) ([]protoreflect.MethodDescriptor, error) {
-	file, err := c.FileContainingSymbol(fullyQualifiedName)
+	descriptor, err := c.source.FindSymbol(fullyQualifiedName)
 	if err != nil {
 		return nil, err
 	}
 
-	descriptor := file.FindSymbol(fullyQualifiedName)
 	sd, ok := descriptor.(*desc.ServiceDescriptor)
 	if !ok {
 		return nil, fmt.Errorf("Service Descriptor not found for %s", fullyQualifiedName)
