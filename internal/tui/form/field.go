@@ -30,6 +30,7 @@ func NewTextField(name, placeholder string, charLimit int, validate func(string)
 	ti := textinput.New()
 	ti.Placeholder = placeholder
 	ti.CharLimit = charLimit
+	ti.Prompt = ""
 	return &Field{
 		name:      name,
 		kind:      FieldText,

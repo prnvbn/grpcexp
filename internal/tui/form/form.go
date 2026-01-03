@@ -191,11 +191,8 @@ func (f *Form) blurField(idx int) {
 func (f *Form) View() string {
 	var b strings.Builder
 
-	b.WriteString(headerStyle.Render(fmt.Sprintf("Method: %s", f.method.Name())))
-	b.WriteString("\n")
-	b.WriteString(labelStyle.Render(fmt.Sprintf("Request: %s", f.method.Input().FullName())))
-	b.WriteString("\n")
-	b.WriteString(labelStyle.Render(fmt.Sprintf("Response: %s", f.method.Output().FullName())))
+	b.WriteString(headerStyle.Render(string(f.method.Name())))
+	b.WriteString(labelStyle.Render(fmt.Sprintf(" (%s → %s)", f.method.Input().Name(), f.method.Output().Name())))
 	b.WriteString("\n\n")
 
 	switch f.state {
@@ -225,40 +222,46 @@ func (f *Form) renderFields() string {
 	var b strings.Builder
 
 	if len(f.fields) == 0 {
-		b.WriteString(labelStyle.Render("This method has no supported input fields."))
+		b.WriteString(labelStyle.Render("No input fields."))
 		b.WriteString("\n")
 	}
 
 	for i, field := range f.fields {
 		isFocused := i == f.focusIndex
 
-		label := field.name
+		// Build the field line: prefix + label: input
+		var prefix string
 		if isFocused {
-			b.WriteString(focusedLabelStyle.Render("> " + label))
+			prefix = "> "
 		} else {
-			b.WriteString(labelStyle.Render("  " + label))
+			prefix = "  "
 		}
-		b.WriteString("\n")
 
+		var inputView string
 		switch field.kind {
 		case FieldText:
-			b.WriteString("  ")
-			b.WriteString(field.textInput.View())
+			inputView = field.textInput.View()
 		case FieldEnum, FieldBool:
-			b.WriteString("  ")
-			b.WriteString(field.enumPicker.View())
+			inputView = field.enumPicker.View()
 		}
-		b.WriteString("\n\n")
+
+		if isFocused {
+			b.WriteString(focusedLabelStyle.Render(prefix + field.name + ": "))
+		} else {
+			b.WriteString(labelStyle.Render(prefix + field.name + ": "))
+		}
+		b.WriteString(inputView)
+		b.WriteString("\n")
 	}
 
 	if len(f.unsupportedFields) > 0 {
-		b.WriteString(labelStyle.Render(fmt.Sprintf("Unsupported fields: %s",
+		b.WriteString(labelStyle.Render(fmt.Sprintf("(unsupported: %s)",
 			strings.Join(f.unsupportedFields, ", "))))
 		b.WriteString("\n")
 	}
 
 	b.WriteString("\n")
-	b.WriteString(labelStyle.Render("tab/↓/j: next • shift+tab/↑/k: prev • left/h: prev opt • right/l: next opt • enter: submit"))
+	b.WriteString(labelStyle.Render("↑/↓: navigate • ←/→: options • enter: submit"))
 
 	return b.String()
 }
