@@ -378,43 +378,9 @@ func (f *Form) buildFields(fields protoreflect.FieldDescriptors, prefix []string
 			continue
 		}
 
-		formField := f.createFormField(field, currentPath)
+		formField := NewFieldFromProto(field, currentPath)
 		if formField != nil {
 			f.fields = append(f.fields, *formField)
 		}
-	}
-}
-
-func (f *Form) createFormField(field protoreflect.FieldDescriptor, path []string) *Field {
-	name := string(field.Name())
-	displayName := strings.Join(path, ".")
-
-	switch field.Kind() {
-	case protoreflect.StringKind:
-		return NewTextField(displayName, path, fmt.Sprintf("Enter %s...", name), 256, nil)
-
-	case protoreflect.BoolKind:
-		return NewBoolField(displayName, path)
-
-	case protoreflect.Int32Kind, protoreflect.Int64Kind,
-		protoreflect.Sint32Kind, protoreflect.Sint64Kind,
-		protoreflect.Sfixed32Kind, protoreflect.Sfixed64Kind:
-		return NewTextField(displayName, path, "Enter integer...", 64, validateInt)
-
-	case protoreflect.Uint32Kind, protoreflect.Uint64Kind,
-		protoreflect.Fixed32Kind, protoreflect.Fixed64Kind:
-		return NewTextField(displayName, path, "Enter positive integer...", 64, validateUint)
-
-	case protoreflect.FloatKind, protoreflect.DoubleKind:
-		return NewTextField(displayName, path, "Enter number...", 64, validateFloat)
-
-	case protoreflect.EnumKind:
-		return NewEnumField(displayName, path, field)
-
-	case protoreflect.BytesKind:
-		return NewTextField(displayName, path, "Enter hex bytes (e.g., deadbeef)...", 512, nil)
-
-	default:
-		return nil
 	}
 }
