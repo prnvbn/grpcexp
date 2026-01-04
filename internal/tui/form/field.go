@@ -19,6 +19,7 @@ const (
 	FieldGroup
 	FieldList
 	FieldMap
+	FieldOneof
 )
 
 type Field struct {
@@ -30,6 +31,7 @@ type Field struct {
 	fieldGroup *fieldGroup
 	listField  *fieldList
 	mapField   *fieldMap
+	oneofField *fieldOneof
 
 	validate func(string) error
 }
@@ -105,6 +107,15 @@ func NewMapField(name string, field protoreflect.FieldDescriptor) *Field {
 		name:     name,
 		kind:     FieldMap,
 		mapField: mf,
+	}
+}
+
+func NewOneofField(name string, oneof protoreflect.OneofDescriptor) *Field {
+	of := newFieldOneof(name, oneof)
+	return &Field{
+		name:       name,
+		kind:       FieldOneof,
+		oneofField: of,
 	}
 }
 
@@ -187,6 +198,8 @@ func (f *Field) Value() any {
 		return f.listField.Value()
 	case FieldMap:
 		return f.mapField.Value()
+	case FieldOneof:
+		return f.oneofField.Value()
 	default:
 		panic(fmt.Sprintf("unknown field kind: %d", f.kind))
 	}
@@ -204,6 +217,8 @@ func (f *Field) View() string {
 		return f.listField.View()
 	case FieldMap:
 		return f.mapField.View()
+	case FieldOneof:
+		return f.oneofField.View()
 	default:
 		panic(fmt.Sprintf("unknown field kind: %d", f.kind))
 	}
@@ -225,6 +240,10 @@ func (f *Field) AcceptsTextInput() bool {
 		if f.mapField != nil {
 			return f.mapField.AcceptsTextInput()
 		}
+	case FieldOneof:
+		if f.oneofField != nil {
+			return f.oneofField.AcceptsTextInput()
+		}
 	}
 	return false
 }
@@ -244,6 +263,10 @@ func (f *Field) Focus() tea.Cmd {
 	case FieldMap:
 		if f.mapField != nil {
 			return f.mapField.FocusFirst()
+		}
+	case FieldOneof:
+		if f.oneofField != nil {
+			return f.oneofField.FocusFirst()
 		}
 	}
 	return nil
@@ -265,6 +288,10 @@ func (f *Field) FocusFromEnd() tea.Cmd {
 		if f.mapField != nil {
 			return f.mapField.FocusLast()
 		}
+	case FieldOneof:
+		if f.oneofField != nil {
+			return f.oneofField.FocusLast()
+		}
 	}
 	return nil
 }
@@ -285,6 +312,10 @@ func (f *Field) Blur() {
 		if f.mapField != nil {
 			f.mapField.Blur()
 		}
+	case FieldOneof:
+		if f.oneofField != nil {
+			f.oneofField.Blur()
+		}
 	}
 }
 
@@ -301,6 +332,10 @@ func (f *Field) Next() bool {
 	case FieldMap:
 		if f.mapField != nil {
 			return f.mapField.NextField()
+		}
+	case FieldOneof:
+		if f.oneofField != nil {
+			return f.oneofField.NextField()
 		}
 	}
 	return false
@@ -319,6 +354,10 @@ func (f *Field) Prev() bool {
 	case FieldMap:
 		if f.mapField != nil {
 			return f.mapField.PrevField()
+		}
+	case FieldOneof:
+		if f.oneofField != nil {
+			return f.oneofField.PrevField()
 		}
 	}
 	return false
@@ -344,6 +383,10 @@ func (f *Field) HandleKey(msg tea.KeyMsg) (tea.Cmd, bool) {
 		if f.mapField != nil {
 			return f.mapField.HandleKey(msg)
 		}
+	case FieldOneof:
+		if f.oneofField != nil {
+			return f.oneofField.HandleKey(msg)
+		}
 	}
 	return nil, false
 }
@@ -366,6 +409,10 @@ func (f *Field) Update(msg tea.Msg) tea.Cmd {
 		if f.mapField != nil {
 			return f.mapField.Update(msg)
 		}
+	case FieldOneof:
+		if f.oneofField != nil {
+			return f.oneofField.Update(msg)
+		}
 	}
 	return nil
 }
@@ -383,6 +430,10 @@ func (f *Field) SetWidth(width int) {
 	case FieldMap:
 		if f.mapField != nil {
 			f.mapField.SetWidth(width)
+		}
+	case FieldOneof:
+		if f.oneofField != nil {
+			f.oneofField.SetWidth(width)
 		}
 	}
 }
@@ -423,6 +474,14 @@ func (f *Field) RenderWithFocus(focused bool, depth int) string {
 		}
 		b.WriteString("\n")
 		b.WriteString(f.mapField.ViewWithDepth(depth + 1))
+	case FieldOneof:
+		if focused {
+			b.WriteString(focusedLabelStyle.Render(prefix + f.name + ":"))
+		} else {
+			b.WriteString(labelStyle.Render(prefix + f.name + ":"))
+		}
+		b.WriteString("\n")
+		b.WriteString(f.oneofField.ViewWithDepth(depth + 1))
 	default:
 		if focused {
 			b.WriteString(focusedLabelStyle.Render(prefix + f.name + ": "))

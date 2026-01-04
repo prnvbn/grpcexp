@@ -245,7 +245,7 @@ func (f *Form) buildFieldGroup(msgDesc protoreflect.MessageDescriptor) *fieldGro
 	}
 
 	fields := msgDesc.Fields()
-	// oneofs := msgDesc.Oneofs()
+
 	for i := 0; i < fields.Len(); i++ {
 		field := fields.Get(i)
 		fieldName := string(field.Name())
@@ -258,9 +258,7 @@ func (f *Form) buildFieldGroup(msgDesc protoreflect.MessageDescriptor) *fieldGro
 			continue
 		}
 
-		// TODO: oneof fields require a radio-button style picker UI
 		if field.ContainingOneof() != nil {
-			// f.unsupportedFields = append(f.unsupportedFields, fieldName)
 			continue
 		}
 
@@ -275,6 +273,16 @@ func (f *Form) buildFieldGroup(msgDesc protoreflect.MessageDescriptor) *fieldGro
 		formField := NewFieldFromProto(field)
 		if formField != nil {
 			g.fields = append(g.fields, *formField)
+		}
+	}
+
+	oneofs := msgDesc.Oneofs()
+	for i := 0; i < oneofs.Len(); i++ {
+		oneof := oneofs.Get(i)
+		oneofName := string(oneof.Name())
+		oneofField := NewOneofField(oneofName, oneof)
+		if oneofField != nil {
+			g.fields = append(g.fields, *oneofField)
 		}
 	}
 
