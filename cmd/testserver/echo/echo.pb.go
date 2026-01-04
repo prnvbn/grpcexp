@@ -7,12 +7,11 @@
 package echov1
 
 import (
+	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
+	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
-
-	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
-	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 )
 
 const (
@@ -210,6 +209,7 @@ type Message struct {
 	DoubleValue   float64                `protobuf:"fixed64,7,opt,name=double_value,json=doubleValue,proto3" json:"double_value,omitempty"`
 	Strings       []string               `protobuf:"bytes,8,rep,name=strings,proto3" json:"strings,omitempty"`
 	NestedMessage *NestedMessage         `protobuf:"bytes,9,opt,name=nested_message,json=nestedMessage,proto3" json:"nested_message,omitempty"`
+	MapValue      map[string]string      `protobuf:"bytes,10,rep,name=map_value,json=mapValue,proto3" json:"map_value,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -307,6 +307,13 @@ func (x *Message) GetNestedMessage() *NestedMessage {
 	return nil
 }
 
+func (x *Message) GetMapValue() map[string]string {
+	if x != nil {
+		return x.MapValue
+	}
+	return nil
+}
+
 var File_cmd_testserver_echo_echo_proto protoreflect.FileDescriptor
 
 const file_cmd_testserver_echo_echo_proto_rawDesc = "" +
@@ -321,7 +328,7 @@ const file_cmd_testserver_echo_echo_proto_rawDesc = "" +
 	"\vint32_value\x18\x03 \x01(\x05R\n" +
 	"int32Value\x12W\n" +
 	"\x18even_more_nested_message\x18\x04 \x01(\v2\x1e.echo.v1.EvenMoreNestedMessageR\x15evenMoreNestedMessage\x12Z\n" +
-	"\x1aeven_more_nested_message_2\x18\x05 \x01(\v2\x1e.echo.v1.EvenMoreNestedMessageR\x16evenMoreNestedMessage2\"\x89\x03\n" +
+	"\x1aeven_more_nested_message_2\x18\x05 \x01(\v2\x1e.echo.v1.EvenMoreNestedMessageR\x16evenMoreNestedMessage2\"\x83\x04\n" +
 	"\aMessage\x12\x18\n" +
 	"\amessage\x18\x01 \x01(\tR\amessage\x12\x18\n" +
 	"\aboolean\x18\x02 \x01(\bR\aboolean\x12)\n" +
@@ -334,7 +341,12 @@ const file_cmd_testserver_echo_echo_proto_rawDesc = "" +
 	"floatValue\x12!\n" +
 	"\fdouble_value\x18\a \x01(\x01R\vdoubleValue\x12\x18\n" +
 	"\astrings\x18\b \x03(\tR\astrings\x12=\n" +
-	"\x0enested_message\x18\t \x01(\v2\x16.echo.v1.NestedMessageR\rnestedMessage\"@\n" +
+	"\x0enested_message\x18\t \x01(\v2\x16.echo.v1.NestedMessageR\rnestedMessage\x12;\n" +
+	"\tmap_value\x18\n" +
+	" \x03(\v2\x1e.echo.v1.Message.MapValueEntryR\bmapValue\x1a;\n" +
+	"\rMapValueEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"@\n" +
 	"\x04Enum\x12\x14\n" +
 	"\x10ENUM_UNSPECIFIED\x10\x00\x12\x10\n" +
 	"\fENUM_VALUE_1\x10\x01\x12\x10\n" +
@@ -356,25 +368,27 @@ func file_cmd_testserver_echo_echo_proto_rawDescGZIP() []byte {
 }
 
 var file_cmd_testserver_echo_echo_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_cmd_testserver_echo_echo_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
+var file_cmd_testserver_echo_echo_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_cmd_testserver_echo_echo_proto_goTypes = []any{
 	(Message_Enum)(0),             // 0: echo.v1.Message.Enum
 	(*EvenMoreNestedMessage)(nil), // 1: echo.v1.EvenMoreNestedMessage
 	(*NestedMessage)(nil),         // 2: echo.v1.NestedMessage
 	(*Message)(nil),               // 3: echo.v1.Message
+	nil,                           // 4: echo.v1.Message.MapValueEntry
 }
 var file_cmd_testserver_echo_echo_proto_depIdxs = []int32{
 	1, // 0: echo.v1.NestedMessage.even_more_nested_message:type_name -> echo.v1.EvenMoreNestedMessage
 	1, // 1: echo.v1.NestedMessage.even_more_nested_message_2:type_name -> echo.v1.EvenMoreNestedMessage
 	0, // 2: echo.v1.Message.enum:type_name -> echo.v1.Message.Enum
 	2, // 3: echo.v1.Message.nested_message:type_name -> echo.v1.NestedMessage
-	3, // 4: echo.v1.EchoService.Echo:input_type -> echo.v1.Message
-	3, // 5: echo.v1.EchoService.Echo:output_type -> echo.v1.Message
-	5, // [5:6] is the sub-list for method output_type
-	4, // [4:5] is the sub-list for method input_type
-	4, // [4:4] is the sub-list for extension type_name
-	4, // [4:4] is the sub-list for extension extendee
-	0, // [0:4] is the sub-list for field type_name
+	4, // 4: echo.v1.Message.map_value:type_name -> echo.v1.Message.MapValueEntry
+	3, // 5: echo.v1.EchoService.Echo:input_type -> echo.v1.Message
+	3, // 6: echo.v1.EchoService.Echo:output_type -> echo.v1.Message
+	6, // [6:7] is the sub-list for method output_type
+	5, // [5:6] is the sub-list for method input_type
+	5, // [5:5] is the sub-list for extension type_name
+	5, // [5:5] is the sub-list for extension extendee
+	0, // [0:5] is the sub-list for field type_name
 }
 
 func init() { file_cmd_testserver_echo_echo_proto_init() }
@@ -388,7 +402,7 @@ func file_cmd_testserver_echo_echo_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_cmd_testserver_echo_echo_proto_rawDesc), len(file_cmd_testserver_echo_echo_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   3,
+			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

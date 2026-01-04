@@ -35,6 +35,16 @@ message Message {
 
   repeated string strings = 8;
   NestedMessage nested_message = 9;
+
+  map<string, string> map_value = 10;
+
+  // oneof oneof_value {
+  //   string oneof_string_value = 11;
+  //   int32 oneof_int32_value = 12;
+  //   int64 oneof_int64_value = 13;
+  //   float oneof_float_value = 14;
+  //   double oneof_double_value = 15;
+  // }
 }
 
 service EchoService {

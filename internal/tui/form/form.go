@@ -254,6 +254,12 @@ func (f *Form) buildFieldGroup(fields protoreflect.FieldDescriptors) *fieldGroup
 			continue
 		}
 
+		// TODO: oneof fields require a radio-button style picker UI
+		if field.ContainingOneof() != nil {
+			f.unsupportedFields = append(f.unsupportedFields, fieldName)
+			continue
+		}
+
 		if field.IsList() {
 			listField := NewListField(fieldName, field)
 			if listField != nil {
