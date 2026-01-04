@@ -48,8 +48,7 @@ func NewForm(method protoreflect.MethodDescriptor, client *grpc.Client) Form {
 		client: client,
 	}
 
-	inputMsgDesc := method.Input()
-	f.root = f.buildFieldGroup(inputMsgDesc.Fields())
+	f.root = f.buildFieldGroup(method.Input())
 
 	if f.root.Empty() {
 		f.submitFocused = true
@@ -237,7 +236,7 @@ func (f *Form) invokeRPC() tea.Cmd {
 	}
 }
 
-func (f *Form) buildFieldGroup(fields protoreflect.FieldDescriptors) *fieldGroup {
+func (f *Form) buildFieldGroup(msgDesc protoreflect.MessageDescriptor) *fieldGroup {
 	g := &fieldGroup{
 		name:       "",
 		fields:     make([]Field, 0),
@@ -245,6 +244,8 @@ func (f *Form) buildFieldGroup(fields protoreflect.FieldDescriptors) *fieldGroup
 		focused:    false,
 	}
 
+	fields := msgDesc.Fields()
+	// oneofs := msgDesc.Oneofs()
 	for i := 0; i < fields.Len(); i++ {
 		field := fields.Get(i)
 		fieldName := string(field.Name())
@@ -259,7 +260,7 @@ func (f *Form) buildFieldGroup(fields protoreflect.FieldDescriptors) *fieldGroup
 
 		// TODO: oneof fields require a radio-button style picker UI
 		if field.ContainingOneof() != nil {
-			f.unsupportedFields = append(f.unsupportedFields, fieldName)
+			// f.unsupportedFields = append(f.unsupportedFields, fieldName)
 			continue
 		}
 

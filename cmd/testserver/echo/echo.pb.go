@@ -7,11 +7,12 @@
 package echov1
 
 import (
-	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
-	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
+
+	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
+	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 )
 
 const (
@@ -210,6 +211,14 @@ type Message struct {
 	Strings       []string               `protobuf:"bytes,8,rep,name=strings,proto3" json:"strings,omitempty"`
 	NestedMessage *NestedMessage         `protobuf:"bytes,9,opt,name=nested_message,json=nestedMessage,proto3" json:"nested_message,omitempty"`
 	MapValue      map[string]string      `protobuf:"bytes,10,rep,name=map_value,json=mapValue,proto3" json:"map_value,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	// Types that are valid to be assigned to OneofValue:
+	//
+	//	*Message_OneofStringValue
+	//	*Message_OneofInt32Value
+	//	*Message_OneofInt64Value
+	//	*Message_OneofFloatValue
+	//	*Message_OneofDoubleValue
+	OneofValue    isMessage_OneofValue `protobuf_oneof:"oneof_value"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -314,6 +323,92 @@ func (x *Message) GetMapValue() map[string]string {
 	return nil
 }
 
+func (x *Message) GetOneofValue() isMessage_OneofValue {
+	if x != nil {
+		return x.OneofValue
+	}
+	return nil
+}
+
+func (x *Message) GetOneofStringValue() string {
+	if x != nil {
+		if x, ok := x.OneofValue.(*Message_OneofStringValue); ok {
+			return x.OneofStringValue
+		}
+	}
+	return ""
+}
+
+func (x *Message) GetOneofInt32Value() int32 {
+	if x != nil {
+		if x, ok := x.OneofValue.(*Message_OneofInt32Value); ok {
+			return x.OneofInt32Value
+		}
+	}
+	return 0
+}
+
+func (x *Message) GetOneofInt64Value() int64 {
+	if x != nil {
+		if x, ok := x.OneofValue.(*Message_OneofInt64Value); ok {
+			return x.OneofInt64Value
+		}
+	}
+	return 0
+}
+
+func (x *Message) GetOneofFloatValue() float32 {
+	if x != nil {
+		if x, ok := x.OneofValue.(*Message_OneofFloatValue); ok {
+			return x.OneofFloatValue
+		}
+	}
+	return 0
+}
+
+func (x *Message) GetOneofDoubleValue() float64 {
+	if x != nil {
+		if x, ok := x.OneofValue.(*Message_OneofDoubleValue); ok {
+			return x.OneofDoubleValue
+		}
+	}
+	return 0
+}
+
+type isMessage_OneofValue interface {
+	isMessage_OneofValue()
+}
+
+type Message_OneofStringValue struct {
+	OneofStringValue string `protobuf:"bytes,11,opt,name=oneof_string_value,json=oneofStringValue,proto3,oneof"`
+}
+
+type Message_OneofInt32Value struct {
+	OneofInt32Value int32 `protobuf:"varint,12,opt,name=oneof_int32_value,json=oneofInt32Value,proto3,oneof"`
+}
+
+type Message_OneofInt64Value struct {
+	OneofInt64Value int64 `protobuf:"varint,13,opt,name=oneof_int64_value,json=oneofInt64Value,proto3,oneof"`
+}
+
+type Message_OneofFloatValue struct {
+	OneofFloatValue float32 `protobuf:"fixed32,14,opt,name=oneof_float_value,json=oneofFloatValue,proto3,oneof"`
+}
+
+type Message_OneofDoubleValue struct {
+	OneofDoubleValue float64 `protobuf:"fixed64,15,opt,name=oneof_double_value,json=oneofDoubleValue,proto3,oneof"`
+}
+
+func (*Message_OneofStringValue) isMessage_OneofValue() {}
+
+func (*Message_OneofInt32Value) isMessage_OneofValue() {}
+
+func (*Message_OneofInt64Value) isMessage_OneofValue() {}
+
+func (*Message_OneofFloatValue) isMessage_OneofValue() {}
+
+func (*Message_OneofDoubleValue) isMessage_OneofValue() {}
+
 var File_cmd_testserver_echo_echo_proto protoreflect.FileDescriptor
 
 const file_cmd_testserver_echo_echo_proto_rawDesc = "" +
@@ -328,7 +423,7 @@ const file_cmd_testserver_echo_echo_proto_rawDesc = "" +
 	"\vint32_value\x18\x03 \x01(\x05R\n" +
 	"int32Value\x12W\n" +
 	"\x18even_more_nested_message\x18\x04 \x01(\v2\x1e.echo.v1.EvenMoreNestedMessageR\x15evenMoreNestedMessage\x12Z\n" +
-	"\x1aeven_more_nested_message_2\x18\x05 \x01(\v2\x1e.echo.v1.EvenMoreNestedMessageR\x16evenMoreNestedMessage2\"\x83\x04\n" +
+	"\x1aeven_more_nested_message_2\x18\x05 \x01(\v2\x1e.echo.v1.EvenMoreNestedMessageR\x16evenMoreNestedMessage2\"\xfc\x05\n" +
 	"\aMessage\x12\x18\n" +
 	"\amessage\x18\x01 \x01(\tR\amessage\x12\x18\n" +
 	"\aboolean\x18\x02 \x01(\bR\aboolean\x12)\n" +
@@ -343,14 +438,20 @@ const file_cmd_testserver_echo_echo_proto_rawDesc = "" +
 	"\astrings\x18\b \x03(\tR\astrings\x12=\n" +
 	"\x0enested_message\x18\t \x01(\v2\x16.echo.v1.NestedMessageR\rnestedMessage\x12;\n" +
 	"\tmap_value\x18\n" +
-	" \x03(\v2\x1e.echo.v1.Message.MapValueEntryR\bmapValue\x1a;\n" +
+	" \x03(\v2\x1e.echo.v1.Message.MapValueEntryR\bmapValue\x12.\n" +
+	"\x12oneof_string_value\x18\v \x01(\tH\x00R\x10oneofStringValue\x12,\n" +
+	"\x11oneof_int32_value\x18\f \x01(\x05H\x00R\x0foneofInt32Value\x12,\n" +
+	"\x11oneof_int64_value\x18\r \x01(\x03H\x00R\x0foneofInt64Value\x12,\n" +
+	"\x11oneof_float_value\x18\x0e \x01(\x02H\x00R\x0foneofFloatValue\x12.\n" +
+	"\x12oneof_double_value\x18\x0f \x01(\x01H\x00R\x10oneofDoubleValue\x1a;\n" +
 	"\rMapValueEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"@\n" +
 	"\x04Enum\x12\x14\n" +
 	"\x10ENUM_UNSPECIFIED\x10\x00\x12\x10\n" +
 	"\fENUM_VALUE_1\x10\x01\x12\x10\n" +
-	"\fENUM_VALUE_2\x10\x0229\n" +
+	"\fENUM_VALUE_2\x10\x02B\r\n" +
+	"\voneof_value29\n" +
 	"\vEchoService\x12*\n" +
 	"\x04Echo\x12\x10.echo.v1.Message\x1a\x10.echo.v1.MessageB\x9c\x01\n" +
 	"\vcom.echo.v1B\tEchoProtoP\x01ZCgithub.com/prnvbn/grpcexp/cmd/testserver/cmd/testserver/echo;echov1\xa2\x02\x03EXX\xaa\x02\aEcho.V1\xca\x02\bEcho_\\V1\xe2\x02\x14Echo_\\V1\\GPBMetadata\xea\x02\bEcho::V1b\x06proto3"
@@ -395,6 +496,13 @@ func init() { file_cmd_testserver_echo_echo_proto_init() }
 func file_cmd_testserver_echo_echo_proto_init() {
 	if File_cmd_testserver_echo_echo_proto != nil {
 		return
+	}
+	file_cmd_testserver_echo_echo_proto_msgTypes[2].OneofWrappers = []any{
+		(*Message_OneofStringValue)(nil),
+		(*Message_OneofInt32Value)(nil),
+		(*Message_OneofInt64Value)(nil),
+		(*Message_OneofFloatValue)(nil),
+		(*Message_OneofDoubleValue)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
