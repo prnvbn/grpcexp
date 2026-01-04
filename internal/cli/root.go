@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -51,7 +52,7 @@ func run(cmd *cobra.Command, args []string) error {
 	grpcClient, err := grpc.NewClient(ctx, grpc.Config{
 		Target:    target,
 		Creds:     creds,
-		UserAgent: "grpcexp/" + version,
+		UserAgent: "grpcexp/" + strings.TrimSpace(version),
 		Protoset:  protoset,
 	})
 	if err != nil {

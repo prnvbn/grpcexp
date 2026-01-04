@@ -35,7 +35,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v4
         with:
-          go-version-file: "internal/cli/version.txt"
+          go-version-file: "go.mod"
       - name: build
         run: make dist
 
