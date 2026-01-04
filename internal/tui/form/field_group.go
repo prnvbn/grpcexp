@@ -61,6 +61,8 @@ func (g *fieldGroup) focusChild(idx int) {
 		field.textInput.Focus()
 	case FieldGroup:
 		field.fieldGroup.FocusFirst()
+	case FieldList:
+		field.listField.FocusFirst()
 	}
 }
 
@@ -74,6 +76,8 @@ func (g *fieldGroup) blurChild(idx int) {
 		field.textInput.Blur()
 	case FieldGroup:
 		field.fieldGroup.Blur()
+	case FieldList:
+		field.listField.Blur()
 	}
 }
 
@@ -93,11 +97,13 @@ func (g *fieldGroup) FocusLast() {
 	g.focused = true
 	g.focusIndex = len(g.fields) - 1
 
-	// If last field is a group, focus its last field recursively
 	field := &g.fields[g.focusIndex]
-	if field.kind == FieldGroup {
+	switch field.kind {
+	case FieldGroup:
 		field.fieldGroup.FocusLast()
-	} else {
+	case FieldList:
+		field.listField.FocusLast()
+	default:
 		g.focusChild(g.focusIndex)
 	}
 }
@@ -117,12 +123,18 @@ func (g *fieldGroup) NextField() bool {
 		return false
 	}
 
-	if currentField.kind == FieldGroup {
+	switch currentField.kind {
+	case FieldGroup:
 		if currentField.fieldGroup.NextField() {
 			return true
 		}
 		currentField.fieldGroup.Blur()
-	} else {
+	case FieldList:
+		if currentField.listField.NextField() {
+			return true
+		}
+		currentField.listField.Blur()
+	default:
 		g.blurChild(g.focusIndex)
 	}
 
@@ -132,9 +144,12 @@ func (g *fieldGroup) NextField() bool {
 
 	g.focusIndex++
 	nextField := &g.fields[g.focusIndex]
-	if nextField.kind == FieldGroup {
+	switch nextField.kind {
+	case FieldGroup:
 		nextField.fieldGroup.FocusFirst()
-	} else {
+	case FieldList:
+		nextField.listField.FocusFirst()
+	default:
 		g.focusChild(g.focusIndex)
 	}
 	return true
@@ -150,12 +165,18 @@ func (g *fieldGroup) PrevField() bool {
 		return false
 	}
 
-	if currentField.kind == FieldGroup {
+	switch currentField.kind {
+	case FieldGroup:
 		if currentField.fieldGroup.PrevField() {
 			return true
 		}
 		currentField.fieldGroup.Blur()
-	} else {
+	case FieldList:
+		if currentField.listField.PrevField() {
+			return true
+		}
+		currentField.listField.Blur()
+	default:
 		g.blurChild(g.focusIndex)
 	}
 
@@ -165,9 +186,12 @@ func (g *fieldGroup) PrevField() bool {
 
 	g.focusIndex--
 	prevField := &g.fields[g.focusIndex]
-	if prevField.kind == FieldGroup {
+	switch prevField.kind {
+	case FieldGroup:
 		prevField.fieldGroup.FocusLast()
-	} else {
+	case FieldList:
+		prevField.listField.FocusLast()
+	default:
 		g.focusChild(g.focusIndex)
 	}
 	return true
@@ -175,7 +199,16 @@ func (g *fieldGroup) PrevField() bool {
 
 func (g *fieldGroup) AcceptsTextInput() bool {
 	field := g.focusedField()
-	return field.kind == FieldText
+	if field == nil {
+		return false
+	}
+	if field.kind == FieldText {
+		return true
+	}
+	if field.kind == FieldList && field.listField != nil {
+		return field.listField.AcceptsTextInput()
+	}
+	return false
 }
 
 func (g *fieldGroup) HandleKey(msg tea.KeyMsg) (tea.Cmd, bool) {
@@ -200,6 +233,10 @@ func (g *fieldGroup) HandleKey(msg tea.KeyMsg) (tea.Cmd, bool) {
 		return field.fieldGroup.HandleKey(msg)
 	}
 
+	if field.kind == FieldList {
+		return field.listField.HandleKey(msg)
+	}
+
 	return nil, false
 }
 
@@ -221,6 +258,10 @@ func (g *fieldGroup) Update(msg tea.Msg) tea.Cmd {
 
 	if field.kind == FieldGroup {
 		return field.fieldGroup.Update(msg)
+	}
+
+	if field.kind == FieldList {
+		return field.listField.Update(msg)
 	}
 
 	return nil
@@ -250,7 +291,8 @@ func (g *fieldGroup) ViewWithDepth(depth int) string {
 			prefix = indent + "  "
 		}
 
-		if field.kind == FieldGroup {
+		switch field.kind {
+		case FieldGroup:
 			if isFocused {
 				b.WriteString(focusedLabelStyle.Render(prefix + field.name + ":"))
 			} else {
@@ -258,7 +300,15 @@ func (g *fieldGroup) ViewWithDepth(depth int) string {
 			}
 			b.WriteString("\n")
 			b.WriteString(field.fieldGroup.ViewWithDepth(depth + 1))
-		} else {
+		case FieldList:
+			if isFocused {
+				b.WriteString(focusedLabelStyle.Render(prefix + field.name + ":"))
+			} else {
+				b.WriteString(labelStyle.Render(prefix + field.name + ":"))
+			}
+			b.WriteString("\n")
+			b.WriteString(field.listField.ViewWithDepth(depth + 1))
+		default:
 			if isFocused {
 				b.WriteString(focusedLabelStyle.Render(prefix + field.name + ": "))
 			} else {

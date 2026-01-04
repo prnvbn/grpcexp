@@ -114,10 +114,15 @@ func (f *Form) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
 	case "tab", "down":
 		f.nextField()
 		return f, nil, true
-	case "enter":
+	case "enter", " ":
 		if f.submitFocused {
 			f.state = formStateCalling
 			return f, f.invokeRPC(), true
+		}
+
+		cmd, handled := f.root.HandleKey(msg)
+		if handled {
+			return f, cmd, true
 		}
 		f.nextField()
 		return f, nil, true
@@ -207,7 +212,7 @@ func (f *Form) renderFields() string {
 		b.WriteString(labelStyle.Render("  [Submit]"))
 	}
 	b.WriteString("\n\n")
-	b.WriteString(labelStyle.Render("↑/↓/enter: navigate • ←/→: options"))
+	b.WriteString(labelStyle.Render("↑/↓/tab: navigate • ←/→: options"))
 
 	return b.String()
 }
@@ -244,8 +249,16 @@ func (f *Form) buildFieldGroup(fields protoreflect.FieldDescriptors) *fieldGroup
 		field := fields.Get(i)
 		fieldName := string(field.Name())
 
-		if field.IsList() || field.IsMap() {
+		if field.IsMap() {
 			f.unsupportedFields = append(f.unsupportedFields, fieldName)
+			continue
+		}
+
+		if field.IsList() {
+			listField := NewListField(fieldName, field)
+			if listField != nil {
+				g.fields = append(g.fields, *listField)
+			}
 			continue
 		}
 

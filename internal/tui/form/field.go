@@ -17,6 +17,7 @@ const (
 	FieldBool
 	FieldEnum
 	FieldGroup
+	FieldList
 )
 
 type Field struct {
@@ -26,6 +27,7 @@ type Field struct {
 	textInput  textinput.Model
 	enumPicker enumPicker
 	fieldGroup *fieldGroup
+	listField  *fieldList
 
 	validate func(string) error
 }
@@ -83,6 +85,15 @@ func NewFieldGroup(name string, field protoreflect.FieldDescriptor) *Field {
 		name:       name,
 		kind:       FieldGroup,
 		fieldGroup: fg,
+	}
+}
+
+func NewListField(name string, field protoreflect.FieldDescriptor) *Field {
+	lf := newListField(name, field)
+	return &Field{
+		name:      name,
+		kind:      FieldList,
+		listField: lf,
 	}
 }
 
@@ -148,7 +159,6 @@ func NewFieldFromProto(field protoreflect.FieldDescriptor) *Field {
 		return NewTextField(name, "Enter hex bytes (e.g., deadbeef)...", 512, nil)
 	case protoreflect.MessageKind:
 		return NewFieldGroup(name, field)
-
 	default:
 		return nil
 	}
@@ -162,6 +172,8 @@ func (f *Field) Value() any {
 		return f.enumPicker.Value()
 	case FieldGroup:
 		return f.fieldGroup.Value()
+	case FieldList:
+		return f.listField.Value()
 	default:
 		panic(fmt.Sprintf("unknown field kind: %d", f.kind))
 	}
@@ -175,6 +187,8 @@ func (f *Field) View() string {
 		return f.enumPicker.View()
 	case FieldGroup:
 		return f.fieldGroup.View()
+	case FieldList:
+		return f.listField.View()
 	default:
 		panic(fmt.Sprintf("unknown field kind: %d", f.kind))
 	}
@@ -185,7 +199,13 @@ func (f *Field) Name() string {
 }
 
 func (f *Field) AcceptsTextInput() bool {
-	return f.kind == FieldText
+	if f.kind == FieldText {
+		return true
+	}
+	if f.kind == FieldList && f.listField != nil {
+		return f.listField.AcceptsTextInput()
+	}
+	return false
 }
 
 func (f *Field) Focus() tea.Cmd {
@@ -195,6 +215,10 @@ func (f *Field) Focus() tea.Cmd {
 	case FieldGroup:
 		if f.fieldGroup != nil {
 			f.fieldGroup.FocusFirst()
+		}
+	case FieldList:
+		if f.listField != nil {
+			return f.listField.FocusFirst()
 		}
 	}
 	return nil
@@ -208,6 +232,10 @@ func (f *Field) FocusFromEnd() tea.Cmd {
 		if f.fieldGroup != nil {
 			f.fieldGroup.FocusLast()
 		}
+	case FieldList:
+		if f.listField != nil {
+			return f.listField.FocusLast()
+		}
 	}
 	return nil
 }
@@ -220,6 +248,10 @@ func (f *Field) Blur() {
 		if f.fieldGroup != nil {
 			f.fieldGroup.Blur()
 		}
+	case FieldList:
+		if f.listField != nil {
+			f.listField.Blur()
+		}
 	}
 }
 
@@ -227,12 +259,18 @@ func (f *Field) Next() bool {
 	if f.kind == FieldGroup && f.fieldGroup != nil {
 		return f.fieldGroup.NextField()
 	}
+	if f.kind == FieldList && f.listField != nil {
+		return f.listField.NextField()
+	}
 	return false
 }
 
 func (f *Field) Prev() bool {
 	if f.kind == FieldGroup && f.fieldGroup != nil {
 		return f.fieldGroup.PrevField()
+	}
+	if f.kind == FieldList && f.listField != nil {
+		return f.listField.PrevField()
 	}
 	return false
 }
@@ -249,6 +287,10 @@ func (f *Field) HandleKey(msg tea.KeyMsg) (tea.Cmd, bool) {
 		if f.fieldGroup != nil {
 			return f.fieldGroup.HandleKey(msg)
 		}
+	case FieldList:
+		if f.listField != nil {
+			return f.listField.HandleKey(msg)
+		}
 	}
 	return nil, false
 }
@@ -263,6 +305,10 @@ func (f *Field) Update(msg tea.Msg) tea.Cmd {
 		if f.fieldGroup != nil {
 			return f.fieldGroup.Update(msg)
 		}
+	case FieldList:
+		if f.listField != nil {
+			return f.listField.Update(msg)
+		}
 	}
 	return nil
 }
@@ -273,6 +319,10 @@ func (f *Field) SetWidth(width int) {
 		f.textInput.Width = width
 	case FieldGroup:
 		f.fieldGroup.SetWidth(width)
+	case FieldList:
+		if f.listField != nil {
+			f.listField.SetWidth(width)
+		}
 	}
 }
 
@@ -295,6 +345,17 @@ func (f *Field) RenderWithFocus(focused bool, depth int) string {
 		}
 		b.WriteString("\n")
 		b.WriteString(f.fieldGroup.ViewWithDepth(depth + 1))
+		return b.String()
+	}
+
+	if f.kind == FieldList {
+		if focused {
+			b.WriteString(focusedLabelStyle.Render(prefix + f.name + ":"))
+		} else {
+			b.WriteString(labelStyle.Render(prefix + f.name + ":"))
+		}
+		b.WriteString("\n")
+		b.WriteString(f.listField.ViewWithDepth(depth + 1))
 		return b.String()
 	}
 
