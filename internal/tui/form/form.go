@@ -133,11 +133,7 @@ func (f *Form) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
 		return f, nil, true
 	case "left", "h", "right", "l":
 		if field.kind == FieldEnum || field.kind == FieldBool {
-			if msg.String() == "left" || msg.String() == "h" {
-				field.enumPicker.Prev()
-			} else {
-				field.enumPicker.Next()
-			}
+			field.enumPicker.Update(msg)
 			return f, nil, true
 		}
 	case "ctrl+enter":
@@ -319,9 +315,7 @@ func (f *Form) submittedValues() map[string]any {
 		case FieldText:
 			val = field.textInput.Value()
 		case FieldEnum, FieldBool:
-			if item := field.enumPicker.SelectedItem(); item != nil {
-				val = item.value
-			}
+			val = field.enumPicker.Value()
 		}
 		setNestedValue(root, field.path, val)
 	}

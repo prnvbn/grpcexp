@@ -2,6 +2,8 @@ package form
 
 import (
 	"strings"
+
+	tea "github.com/charmbracelet/bubbletea"
 )
 
 type enumItem struct {
@@ -40,6 +42,17 @@ func (p *enumPicker) Prev() {
 	}
 }
 
+func (p *enumPicker) Update(msg tea.Msg) {
+	if keyMsg, ok := msg.(tea.KeyMsg); ok {
+		switch keyMsg.String() {
+		case "left", "h":
+			p.Prev()
+		case "right", "l":
+			p.Next()
+		}
+	}
+}
+
 func (p *enumPicker) SelectedItem() *enumItem {
 	if len(p.items) == 0 || p.selected < 0 || p.selected >= len(p.items) {
 		return nil
@@ -69,4 +82,11 @@ func (p *enumPicker) View() string {
 
 	b.WriteString(bracketStyle.Render(" ]"))
 	return b.String()
+}
+
+func (p *enumPicker) Value() string {
+	if len(p.items) == 0 {
+		return ""
+	}
+	return p.items[p.selected].value
 }
