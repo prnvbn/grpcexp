@@ -19,6 +19,7 @@ type Config struct {
 	Target    string
 	Creds     credentials.TransportCredentials
 	UserAgent string
+	Protoset  string
 }
 
 type Client struct {
@@ -35,9 +36,17 @@ func NewClient(ctx context.Context, config Config) (*Client, error) {
 		return nil, err
 	}
 
-	refClient := grpcreflect.NewClientAuto(ctx, cc)
-	refClient.AllowMissingFileDescriptors()
-	source := grpcurl.DescriptorSourceFromServer(ctx, refClient) //todo: add support for files as well?
+	var source grpcurl.DescriptorSource
+	if config.Protoset != "" {
+		source, err = grpcurl.DescriptorSourceFromProtoSets(config.Protoset)
+		if err != nil {
+			return nil, fmt.Errorf("failed to load protoset file: %w", err)
+		}
+	} else {
+		refClient := grpcreflect.NewClientAuto(ctx, cc)
+		refClient.AllowMissingFileDescriptors()
+		source = grpcurl.DescriptorSourceFromServer(ctx, refClient)
+	}
 
 	return &Client{source: source, conn: cc}, nil
 }

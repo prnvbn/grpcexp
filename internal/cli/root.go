@@ -14,8 +14,9 @@ import (
 )
 
 var (
-	port int
-	addr string
+	port     int
+	addr     string
+	protoset string
 )
 
 var rootCmd = &cobra.Command{
@@ -41,6 +42,7 @@ func run(cmd *cobra.Command, args []string) error {
 		Target:    target,
 		Creds:     insecure.NewCredentials(), //todo: make configureable
 		UserAgent: "grpcexp/" + version,
+		Protoset:  protoset,
 	})
 	if err != nil {
 		return err
@@ -69,4 +71,5 @@ func Execute() {
 func init() {
 	rootCmd.Flags().IntVarP(&port, "port", "p", 50051, "grpc server port")
 	rootCmd.Flags().StringVarP(&addr, "addr", "a", "", "grpc server address")
+	rootCmd.Flags().StringVar(&protoset, "protoset", "", "path to protoset file (uses server reflection if not specified)")
 }
