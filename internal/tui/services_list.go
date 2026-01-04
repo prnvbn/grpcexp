@@ -117,8 +117,14 @@ func (d minimalDelegate) Render(w io.Writer, m list.Model, index int, item list.
 		return
 	}
 	if index == m.Index() {
-		fmt.Fprintf(w, "> %s", selectedStyle.Render(svc.Title()))
+		_, err := fmt.Fprintf(w, "> %s", selectedStyle.Render(svc.Title()))
+		if err != nil {
+			return
+		}
 	} else {
-		fmt.Fprintf(w, "  %s", svc.Title())
+		_, err := fmt.Fprintf(w, "  %s", svc.Title())
+		if err != nil {
+			return
+		}
 	}
 }

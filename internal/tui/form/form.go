@@ -3,6 +3,7 @@ package form
 import (
 	"context"
 	"fmt"
+	"os"
 	"strings"
 	"time"
 
@@ -79,7 +80,10 @@ func (f *Form) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				if f.responseErr != nil {
 					content = f.responseErr.Error()
 				}
-				clipboard.WriteAll(content)
+				err := clipboard.WriteAll(content)
+				if err != nil {
+					fmt.Fprintf(os.Stderr, "error writing to clipboard: %v\n", err)
+				}
 			case "q":
 				return f, tea.Quit
 			}

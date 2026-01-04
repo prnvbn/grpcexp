@@ -8,7 +8,7 @@ import (
 	"sort"
 
 	"github.com/fullstorydev/grpcurl"
-	"github.com/jhump/protoreflect/desc"
+	"github.com/jhump/protoreflect/desc" //nolint:staticcheck // SA1019: Deprecated package but required by grpcurl
 	"github.com/jhump/protoreflect/grpcreflect"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -100,7 +100,7 @@ func (c *Client) ListMethods(fullyQualifiedName string) ([]protoreflect.MethodDe
 
 	sd, ok := descriptor.(*desc.ServiceDescriptor)
 	if !ok {
-		return nil, fmt.Errorf("Service Descriptor not found for %s", fullyQualifiedName)
+		return nil, fmt.Errorf("service descriptor not found for %s", fullyQualifiedName)
 	}
 
 	methods := make([]protoreflect.MethodDescriptor, 0, len(sd.GetMethods()))
