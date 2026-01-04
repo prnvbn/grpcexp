@@ -103,7 +103,6 @@ func (o *fieldOneof) NextField() bool {
 
 	switch o.focusState {
 	case oneofFocusPicker:
-		// Move from picker to the selected field
 		o.focusState = oneofFocusField
 		field := o.selectedField()
 		if field != nil {
@@ -111,7 +110,6 @@ func (o *fieldOneof) NextField() bool {
 		}
 		return true
 	case oneofFocusField:
-		// Try to navigate within the field
 		field := o.selectedField()
 		if field != nil {
 			if field.Next() {
@@ -119,7 +117,6 @@ func (o *fieldOneof) NextField() bool {
 			}
 			field.Blur()
 		}
-		// No more fields within this oneof
 		return false
 	}
 	return false
@@ -132,7 +129,6 @@ func (o *fieldOneof) PrevField() bool {
 
 	switch o.focusState {
 	case oneofFocusField:
-		// Try to navigate within the field first
 		field := o.selectedField()
 		if field != nil {
 			if field.Prev() {
@@ -140,11 +136,9 @@ func (o *fieldOneof) PrevField() bool {
 			}
 			field.Blur()
 		}
-		// Move back to picker
 		o.focusState = oneofFocusPicker
 		return true
 	case oneofFocusPicker:
-		// Can't go before the picker
 		return false
 	}
 	return false
@@ -168,7 +162,7 @@ func (o *fieldOneof) HandleKey(msg tea.KeyMsg) (tea.Cmd, bool) {
 	switch o.focusState {
 	case oneofFocusPicker:
 		switch msg.String() {
-		case "left", "h", "right", "l":
+		case "left", "right":
 			oldIndex := o.picker.selected
 			o.picker.Update(msg)
 			newIndex := o.picker.selected

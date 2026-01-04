@@ -239,10 +239,9 @@ func (l *fieldList) HandleKey(msg tea.KeyMsg) (tea.Cmd, bool) {
 	}
 
 	isArrowKey := key == "left" || key == "right"
-	isVimKey := key == "h" || key == "l"
 	itemAcceptsText := l.focusTarget == focusItem && l.AcceptsTextInput()
 
-	if isArrowKey || (isVimKey && !itemAcceptsText) {
+	if isArrowKey || (!itemAcceptsText) {
 		switch l.focusTarget {
 		case focusItem:
 			item := l.focusedItem()
@@ -260,7 +259,7 @@ func (l *fieldList) HandleKey(msg tea.KeyMsg) (tea.Cmd, bool) {
 					}
 				}
 			}
-			if key == "right" || key == "l" {
+			if key == "right" {
 				if len(l.items) > 0 && l.focusIndex < len(l.items) {
 					l.items[l.focusIndex].Blur()
 					l.focusTarget = focusRemoveButton
@@ -268,7 +267,7 @@ func (l *fieldList) HandleKey(msg tea.KeyMsg) (tea.Cmd, bool) {
 				}
 			}
 		case focusRemoveButton:
-			if key == "left" || key == "h" {
+			if key == "left" {
 				l.focusTarget = focusItem
 				if l.focusIndex < len(l.items) {
 					return l.items[l.focusIndex].Focus(), true

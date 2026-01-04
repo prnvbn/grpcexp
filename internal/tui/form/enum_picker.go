@@ -43,9 +43,9 @@ func (p *enumPicker) Prev() {
 func (p *enumPicker) Update(msg tea.Msg) {
 	if keyMsg, ok := msg.(tea.KeyMsg); ok {
 		switch keyMsg.String() {
-		case "left", "h":
+		case "left":
 			p.Prev()
-		case "right", "l":
+		case "right":
 			p.Next()
 		}
 	}

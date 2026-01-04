@@ -301,10 +301,9 @@ func (m *fieldMap) HandleKey(msg tea.KeyMsg) (tea.Cmd, bool) {
 	}
 
 	isArrowKey := key == "left" || key == "right"
-	isVimKey := key == "h" || key == "l"
 	entryAcceptsText := (m.focusTarget == mapFocusKey || m.focusTarget == mapFocusValue) && m.AcceptsTextInput()
 
-	if isArrowKey || (isVimKey && !entryAcceptsText) {
+	if isArrowKey || (!entryAcceptsText) {
 		entry := m.focusedEntry()
 		switch m.focusTarget {
 		case mapFocusKey:
@@ -322,7 +321,7 @@ func (m *fieldMap) HandleKey(msg tea.KeyMsg) (tea.Cmd, bool) {
 					}
 				}
 			}
-			if key == "right" || key == "l" {
+			if key == "right" {
 				if entry != nil {
 					entry.key.Blur()
 					m.focusTarget = mapFocusValue
@@ -345,7 +344,7 @@ func (m *fieldMap) HandleKey(msg tea.KeyMsg) (tea.Cmd, bool) {
 					}
 				}
 			}
-			if key == "left" || key == "h" {
+			if key == "left" {
 				if entry != nil {
 					entry.value.Blur()
 					m.focusTarget = mapFocusKey
@@ -353,7 +352,7 @@ func (m *fieldMap) HandleKey(msg tea.KeyMsg) (tea.Cmd, bool) {
 					return nil, true
 				}
 			}
-			if key == "right" || key == "l" {
+			if key == "right" {
 				if entry != nil {
 					entry.value.Blur()
 					m.focusTarget = mapFocusRemoveButton
@@ -361,7 +360,7 @@ func (m *fieldMap) HandleKey(msg tea.KeyMsg) (tea.Cmd, bool) {
 				}
 			}
 		case mapFocusRemoveButton:
-			if key == "left" || key == "h" {
+			if key == "left" {
 				m.focusTarget = mapFocusValue
 				if entry != nil {
 					entry.value.Focus()

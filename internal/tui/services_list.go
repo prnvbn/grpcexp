@@ -34,6 +34,11 @@ func NewServicesList(services []string) ServicesList {
 	l.SetShowHelp(true)
 	l.SetShowPagination(false)
 
+	l.KeyMap.CursorUp.SetKeys("up")
+	l.KeyMap.CursorUp.SetHelp("↑", "up")
+	l.KeyMap.CursorDown.SetKeys("down")
+	l.KeyMap.CursorDown.SetHelp("↓", "down")
+
 	l.AdditionalShortHelpKeys = func() []key.Binding {
 		return []key.Binding{
 			key.NewBinding(key.WithKeys("tab"), key.WithHelp("tab", "navigate")),

@@ -367,7 +367,7 @@ func (f *Field) HandleKey(msg tea.KeyMsg) (tea.Cmd, bool) {
 	switch f.kind {
 	case FieldEnum, FieldBool:
 		switch msg.String() {
-		case "left", "h", "right", "l":
+		case "left", "right":
 			f.enumPicker.Update(msg)
 			return nil, true
 		}

@@ -101,15 +101,6 @@ func (f *Form) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (f *Form) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
 	switch msg.String() {
-	case "j", "k":
-		if f.submitFocused || !f.root.AcceptsTextInput() {
-			if msg.String() == "j" {
-				f.nextField()
-			} else {
-				f.prevField()
-			}
-			return f, nil, true
-		}
 	case "tab", "down":
 		f.nextField()
 		return f, nil, true
@@ -128,7 +119,7 @@ func (f *Form) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
 	case "shift+tab", "up":
 		f.prevField()
 		return f, nil, true
-	case "left", "h", "right", "l":
+	case "left", "right":
 		cmd, handled := f.root.HandleKey(msg)
 		if handled {
 			return f, cmd, true
