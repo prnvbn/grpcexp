@@ -63,6 +63,8 @@ func (g *fieldGroup) focusChild(idx int) {
 		field.fieldGroup.FocusFirst()
 	case FieldList:
 		field.listField.FocusFirst()
+	case FieldMap:
+		field.mapField.FocusFirst()
 	}
 }
 
@@ -78,6 +80,8 @@ func (g *fieldGroup) blurChild(idx int) {
 		field.fieldGroup.Blur()
 	case FieldList:
 		field.listField.Blur()
+	case FieldMap:
+		field.mapField.Blur()
 	}
 }
 
@@ -103,6 +107,8 @@ func (g *fieldGroup) FocusLast() {
 		field.fieldGroup.FocusLast()
 	case FieldList:
 		field.listField.FocusLast()
+	case FieldMap:
+		field.mapField.FocusLast()
 	default:
 		g.focusChild(g.focusIndex)
 	}
@@ -134,6 +140,11 @@ func (g *fieldGroup) NextField() bool {
 			return true
 		}
 		currentField.listField.Blur()
+	case FieldMap:
+		if currentField.mapField.NextField() {
+			return true
+		}
+		currentField.mapField.Blur()
 	default:
 		g.blurChild(g.focusIndex)
 	}
@@ -149,6 +160,8 @@ func (g *fieldGroup) NextField() bool {
 		nextField.fieldGroup.FocusFirst()
 	case FieldList:
 		nextField.listField.FocusFirst()
+	case FieldMap:
+		nextField.mapField.FocusFirst()
 	default:
 		g.focusChild(g.focusIndex)
 	}
@@ -176,6 +189,11 @@ func (g *fieldGroup) PrevField() bool {
 			return true
 		}
 		currentField.listField.Blur()
+	case FieldMap:
+		if currentField.mapField.PrevField() {
+			return true
+		}
+		currentField.mapField.Blur()
 	default:
 		g.blurChild(g.focusIndex)
 	}
@@ -191,6 +209,8 @@ func (g *fieldGroup) PrevField() bool {
 		prevField.fieldGroup.FocusLast()
 	case FieldList:
 		prevField.listField.FocusLast()
+	case FieldMap:
+		prevField.mapField.FocusLast()
 	default:
 		g.focusChild(g.focusIndex)
 	}
@@ -202,11 +222,17 @@ func (g *fieldGroup) AcceptsTextInput() bool {
 	if field == nil {
 		return false
 	}
-	if field.kind == FieldText {
+	switch field.kind {
+	case FieldText:
 		return true
-	}
-	if field.kind == FieldList && field.listField != nil {
-		return field.listField.AcceptsTextInput()
+	case FieldList:
+		if field.listField != nil {
+			return field.listField.AcceptsTextInput()
+		}
+	case FieldMap:
+		if field.mapField != nil {
+			return field.mapField.AcceptsTextInput()
+		}
 	}
 	return false
 }
@@ -221,20 +247,19 @@ func (g *fieldGroup) HandleKey(msg tea.KeyMsg) (tea.Cmd, bool) {
 		return nil, false
 	}
 
-	if field.kind == FieldEnum || field.kind == FieldBool {
+	switch field.kind {
+	case FieldEnum, FieldBool:
 		switch msg.String() {
 		case "left", "h", "right", "l":
 			field.enumPicker.Update(msg)
 			return nil, true
 		}
-	}
-
-	if field.kind == FieldGroup {
+	case FieldGroup:
 		return field.fieldGroup.HandleKey(msg)
-	}
-
-	if field.kind == FieldList {
+	case FieldList:
 		return field.listField.HandleKey(msg)
+	case FieldMap:
+		return field.mapField.HandleKey(msg)
 	}
 
 	return nil, false
@@ -250,18 +275,17 @@ func (g *fieldGroup) Update(msg tea.Msg) tea.Cmd {
 		return nil
 	}
 
-	if field.kind == FieldText {
+	switch field.kind {
+	case FieldText:
 		var cmd tea.Cmd
 		field.textInput, cmd = field.textInput.Update(msg)
 		return cmd
-	}
-
-	if field.kind == FieldGroup {
+	case FieldGroup:
 		return field.fieldGroup.Update(msg)
-	}
-
-	if field.kind == FieldList {
+	case FieldList:
 		return field.listField.Update(msg)
+	case FieldMap:
+		return field.mapField.Update(msg)
 	}
 
 	return nil
@@ -308,6 +332,14 @@ func (g *fieldGroup) ViewWithDepth(depth int) string {
 			}
 			b.WriteString("\n")
 			b.WriteString(field.listField.ViewWithDepth(depth + 1))
+		case FieldMap:
+			if isFocused {
+				b.WriteString(focusedLabelStyle.Render(prefix + field.name + ":"))
+			} else {
+				b.WriteString(labelStyle.Render(prefix + field.name + ":"))
+			}
+			b.WriteString("\n")
+			b.WriteString(field.mapField.ViewWithDepth(depth + 1))
 		default:
 			if isFocused {
 				b.WriteString(focusedLabelStyle.Render(prefix + field.name + ": "))

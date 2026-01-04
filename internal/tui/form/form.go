@@ -250,7 +250,10 @@ func (f *Form) buildFieldGroup(fields protoreflect.FieldDescriptors) *fieldGroup
 		fieldName := string(field.Name())
 
 		if field.IsMap() {
-			f.unsupportedFields = append(f.unsupportedFields, fieldName)
+			mapField := NewMapField(fieldName, field)
+			if mapField != nil {
+				g.fields = append(g.fields, *mapField)
+			}
 			continue
 		}
 

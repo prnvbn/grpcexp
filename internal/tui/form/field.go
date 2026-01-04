@@ -18,6 +18,7 @@ const (
 	FieldEnum
 	FieldGroup
 	FieldList
+	FieldMap
 )
 
 type Field struct {
@@ -28,6 +29,7 @@ type Field struct {
 	enumPicker enumPicker
 	fieldGroup *fieldGroup
 	listField  *fieldList
+	mapField   *fieldMap
 
 	validate func(string) error
 }
@@ -94,6 +96,15 @@ func NewListField(name string, field protoreflect.FieldDescriptor) *Field {
 		name:      name,
 		kind:      FieldList,
 		listField: lf,
+	}
+}
+
+func NewMapField(name string, field protoreflect.FieldDescriptor) *Field {
+	mf := newMapField(name, field)
+	return &Field{
+		name:     name,
+		kind:     FieldMap,
+		mapField: mf,
 	}
 }
 
@@ -174,6 +185,8 @@ func (f *Field) Value() any {
 		return f.fieldGroup.Value()
 	case FieldList:
 		return f.listField.Value()
+	case FieldMap:
+		return f.mapField.Value()
 	default:
 		panic(fmt.Sprintf("unknown field kind: %d", f.kind))
 	}
@@ -189,6 +202,8 @@ func (f *Field) View() string {
 		return f.fieldGroup.View()
 	case FieldList:
 		return f.listField.View()
+	case FieldMap:
+		return f.mapField.View()
 	default:
 		panic(fmt.Sprintf("unknown field kind: %d", f.kind))
 	}
@@ -199,11 +214,17 @@ func (f *Field) Name() string {
 }
 
 func (f *Field) AcceptsTextInput() bool {
-	if f.kind == FieldText {
+	switch f.kind {
+	case FieldText:
 		return true
-	}
-	if f.kind == FieldList && f.listField != nil {
-		return f.listField.AcceptsTextInput()
+	case FieldList:
+		if f.listField != nil {
+			return f.listField.AcceptsTextInput()
+		}
+	case FieldMap:
+		if f.mapField != nil {
+			return f.mapField.AcceptsTextInput()
+		}
 	}
 	return false
 }
@@ -219,6 +240,10 @@ func (f *Field) Focus() tea.Cmd {
 	case FieldList:
 		if f.listField != nil {
 			return f.listField.FocusFirst()
+		}
+	case FieldMap:
+		if f.mapField != nil {
+			return f.mapField.FocusFirst()
 		}
 	}
 	return nil
@@ -236,6 +261,10 @@ func (f *Field) FocusFromEnd() tea.Cmd {
 		if f.listField != nil {
 			return f.listField.FocusLast()
 		}
+	case FieldMap:
+		if f.mapField != nil {
+			return f.mapField.FocusLast()
+		}
 	}
 	return nil
 }
@@ -252,25 +281,45 @@ func (f *Field) Blur() {
 		if f.listField != nil {
 			f.listField.Blur()
 		}
+	case FieldMap:
+		if f.mapField != nil {
+			f.mapField.Blur()
+		}
 	}
 }
 
 func (f *Field) Next() bool {
-	if f.kind == FieldGroup && f.fieldGroup != nil {
-		return f.fieldGroup.NextField()
-	}
-	if f.kind == FieldList && f.listField != nil {
-		return f.listField.NextField()
+	switch f.kind {
+	case FieldGroup:
+		if f.fieldGroup != nil {
+			return f.fieldGroup.NextField()
+		}
+	case FieldList:
+		if f.listField != nil {
+			return f.listField.NextField()
+		}
+	case FieldMap:
+		if f.mapField != nil {
+			return f.mapField.NextField()
+		}
 	}
 	return false
 }
 
 func (f *Field) Prev() bool {
-	if f.kind == FieldGroup && f.fieldGroup != nil {
-		return f.fieldGroup.PrevField()
-	}
-	if f.kind == FieldList && f.listField != nil {
-		return f.listField.PrevField()
+	switch f.kind {
+	case FieldGroup:
+		if f.fieldGroup != nil {
+			return f.fieldGroup.PrevField()
+		}
+	case FieldList:
+		if f.listField != nil {
+			return f.listField.PrevField()
+		}
+	case FieldMap:
+		if f.mapField != nil {
+			return f.mapField.PrevField()
+		}
 	}
 	return false
 }
@@ -291,6 +340,10 @@ func (f *Field) HandleKey(msg tea.KeyMsg) (tea.Cmd, bool) {
 		if f.listField != nil {
 			return f.listField.HandleKey(msg)
 		}
+	case FieldMap:
+		if f.mapField != nil {
+			return f.mapField.HandleKey(msg)
+		}
 	}
 	return nil, false
 }
@@ -309,6 +362,10 @@ func (f *Field) Update(msg tea.Msg) tea.Cmd {
 		if f.listField != nil {
 			return f.listField.Update(msg)
 		}
+	case FieldMap:
+		if f.mapField != nil {
+			return f.mapField.Update(msg)
+		}
 	}
 	return nil
 }
@@ -322,6 +379,10 @@ func (f *Field) SetWidth(width int) {
 	case FieldList:
 		if f.listField != nil {
 			f.listField.SetWidth(width)
+		}
+	case FieldMap:
+		if f.mapField != nil {
+			f.mapField.SetWidth(width)
 		}
 	}
 }
@@ -337,7 +398,8 @@ func (f *Field) RenderWithFocus(focused bool, depth int) string {
 		prefix = indent + "  "
 	}
 
-	if f.kind == FieldGroup {
+	switch f.kind {
+	case FieldGroup:
 		if focused {
 			b.WriteString(focusedLabelStyle.Render(prefix + f.name + ":"))
 		} else {
@@ -345,10 +407,7 @@ func (f *Field) RenderWithFocus(focused bool, depth int) string {
 		}
 		b.WriteString("\n")
 		b.WriteString(f.fieldGroup.ViewWithDepth(depth + 1))
-		return b.String()
-	}
-
-	if f.kind == FieldList {
+	case FieldList:
 		if focused {
 			b.WriteString(focusedLabelStyle.Render(prefix + f.name + ":"))
 		} else {
@@ -356,16 +415,23 @@ func (f *Field) RenderWithFocus(focused bool, depth int) string {
 		}
 		b.WriteString("\n")
 		b.WriteString(f.listField.ViewWithDepth(depth + 1))
-		return b.String()
+	case FieldMap:
+		if focused {
+			b.WriteString(focusedLabelStyle.Render(prefix + f.name + ":"))
+		} else {
+			b.WriteString(labelStyle.Render(prefix + f.name + ":"))
+		}
+		b.WriteString("\n")
+		b.WriteString(f.mapField.ViewWithDepth(depth + 1))
+	default:
+		if focused {
+			b.WriteString(focusedLabelStyle.Render(prefix + f.name + ": "))
+		} else {
+			b.WriteString(labelStyle.Render(prefix + f.name + ": "))
+		}
+		b.WriteString(f.View())
+		b.WriteString("\n")
 	}
-
-	if focused {
-		b.WriteString(focusedLabelStyle.Render(prefix + f.name + ": "))
-	} else {
-		b.WriteString(labelStyle.Render(prefix + f.name + ": "))
-	}
-	b.WriteString(f.View())
-	b.WriteString("\n")
 
 	return b.String()
 }
