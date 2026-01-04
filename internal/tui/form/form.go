@@ -23,18 +23,18 @@ const (
 )
 
 type Form struct {
-	method     protoreflect.MethodDescriptor
-	fields     []Field
-	focusIndex int
-	state      formState
-	width      int
-	height     int
+	method protoreflect.MethodDescriptor
+	root   *fieldGroup
+	state  formState
+	width  int
+	height int
 
 	unsupportedFields []string
 	client            *grpc.Client
 
-	response    string
-	responseErr error
+	response      string
+	responseErr   error
+	submitFocused bool
 }
 
 type rpcResultMsg struct {
@@ -48,20 +48,19 @@ func NewForm(method protoreflect.MethodDescriptor, client *grpc.Client) Form {
 		client: client,
 	}
 
-	inputMsgDesc := f.method.Input()
-	f.buildFields(inputMsgDesc.Fields(), nil)
+	inputMsgDesc := method.Input()
+	f.root = f.buildFieldGroup(inputMsgDesc.Fields())
 
-	f.fields = append(f.fields, Field{kind: FieldSubmit})
-
-	f.focusField(0)
+	if f.root.Empty() {
+		f.submitFocused = true
+	} else {
+		f.root.FocusFirst()
+	}
 
 	return f
 }
 
 func (f *Form) Init() tea.Cmd {
-	if len(f.fields) > 0 && f.fields[0].kind == FieldText {
-		return f.fields[0].textInput.Focus()
-	}
 	return nil
 }
 
@@ -98,19 +97,13 @@ func (f *Form) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 
-	return f, f.updateFocusedField(msg)
-}
-
-func (f *Form) focusedField() *Field {
-	return &f.fields[f.focusIndex]
+	return f, f.root.Update(msg)
 }
 
 func (f *Form) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
-	field := f.focusedField()
-
 	switch msg.String() {
 	case "j", "k":
-		if field.kind != FieldText {
+		if f.submitFocused || !f.root.AcceptsTextInput() {
 			if msg.String() == "j" {
 				f.nextField()
 			} else {
@@ -121,73 +114,42 @@ func (f *Form) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
 	case "tab", "down":
 		f.nextField()
 		return f, nil, true
-	case "shift+tab", "up":
-		f.prevField()
-		return f, nil, true
 	case "enter":
-		if field.kind == FieldSubmit {
+		if f.submitFocused {
 			f.state = formStateCalling
 			return f, f.invokeRPC(), true
 		}
 		f.nextField()
 		return f, nil, true
+	case "shift+tab", "up":
+		f.prevField()
+		return f, nil, true
 	case "left", "h", "right", "l":
-		if field.kind == FieldEnum || field.kind == FieldBool {
-			field.enumPicker.Update(msg)
-			return f, nil, true
+		cmd, handled := f.root.HandleKey(msg)
+		if handled {
+			return f, cmd, true
 		}
-	case "ctrl+enter":
-		f.state = formStateCalling
-		return f, f.invokeRPC(), true
 	}
 	return f, nil, false
 }
 
-func (f *Form) updateFocusedField(msg tea.Msg) tea.Cmd {
-	field := f.focusedField()
-	if field.kind == FieldText {
-		var cmd tea.Cmd
-		field.textInput, cmd = field.textInput.Update(msg)
-		return cmd
-	}
-	return nil
-}
-
 func (f *Form) nextField() {
-	f.blurField(f.focusIndex)
-	f.focusIndex = (f.focusIndex + 1) % len(f.fields)
-	f.focusField(f.focusIndex)
+	if f.submitFocused {
+		return
+	}
+	if !f.root.NextField() {
+		f.root.Blur()
+		f.submitFocused = true
+	}
 }
 
 func (f *Form) prevField() {
-	f.blurField(f.focusIndex)
-	f.focusIndex--
-	if f.focusIndex < 0 {
-		f.focusIndex = len(f.fields) - 1
-	}
-	f.focusField(f.focusIndex)
-}
-
-func (f *Form) focusField(idx int) {
-	if idx < 0 || idx >= len(f.fields) {
+	if f.submitFocused {
+		f.submitFocused = false
+		f.root.FocusLast()
 		return
 	}
-	field := &f.fields[idx]
-	switch field.kind {
-	case FieldText:
-		field.textInput.Focus()
-	}
-}
-
-func (f *Form) blurField(idx int) {
-	if idx < 0 || idx >= len(f.fields) {
-		return
-	}
-	field := &f.fields[idx]
-	switch field.kind {
-	case FieldText:
-		field.textInput.Blur()
-	}
+	f.root.PrevField()
 }
 
 func (f *Form) View() string {
@@ -216,7 +178,7 @@ func (f *Form) View() string {
 	case formStateInput:
 		b.WriteString(f.renderFields())
 	default:
-		panic(fmt.Sprintf("unknown state - non exhaustive switch for form state: %d", f.state))
+		panic(fmt.Sprintf("unknown state: %d", f.state))
 	}
 
 	return b.String()
@@ -225,68 +187,25 @@ func (f *Form) View() string {
 func (f *Form) renderFields() string {
 	var b strings.Builder
 
-	// Check if we only have the submit field
-	if len(f.fields) == 1 && f.fields[0].kind == FieldSubmit {
+	if f.root.Empty() {
 		b.WriteString(labelStyle.Render("No input fields."))
 		b.WriteString("\n")
+	} else {
+		b.WriteString(f.root.ViewWithDepth(0))
 	}
 
-	var lastSeenParent string
-	for i, field := range f.fields {
-		isFocused := i == f.focusIndex
-
-		if field.kind == FieldSubmit {
-			if len(f.unsupportedFields) > 0 {
-				b.WriteString(labelStyle.Render(fmt.Sprintf("(unsupported: %s)",
-					strings.Join(f.unsupportedFields, ", "))))
-				b.WriteString("\n")
-			}
-			b.WriteString("\n")
-			if isFocused {
-				b.WriteString(focusedLabelStyle.Render("> [Submit]"))
-			} else {
-				b.WriteString(labelStyle.Render("  [Submit]"))
-			}
-			continue
-		}
-
-		depth := field.Depth()
-		if depth > 0 {
-			parent := field.path[depth-1]
-			if parent != lastSeenParent {
-				b.WriteString(labelStyle.Render("  " + strings.Repeat("  ", depth-1) + parent + ":"))
-				b.WriteString("\n")
-				lastSeenParent = parent
-			}
-		}
-
-		indent := strings.Repeat("  ", depth)
-		var prefix string
-		if isFocused {
-			prefix = ">" + indent + " "
-		} else {
-			prefix = " " + indent + " "
-		}
-
-		var inputView string
-		switch field.kind {
-		case FieldText:
-			inputView = field.textInput.View()
-		case FieldEnum, FieldBool:
-			inputView = field.enumPicker.View()
-		}
-
-		fieldName := field.path[len(field.path)-1]
-
-		if isFocused {
-			b.WriteString(focusedLabelStyle.Render(prefix + fieldName + ": "))
-		} else {
-			b.WriteString(labelStyle.Render(prefix + fieldName + ": "))
-		}
-		b.WriteString(inputView)
+	if len(f.unsupportedFields) > 0 {
+		b.WriteString(labelStyle.Render(fmt.Sprintf("(unsupported: %s)",
+			strings.Join(f.unsupportedFields, ", "))))
 		b.WriteString("\n")
 	}
 
+	b.WriteString("\n")
+	if f.submitFocused {
+		b.WriteString(focusedLabelStyle.Render("> [Submit]"))
+	} else {
+		b.WriteString(labelStyle.Render("  [Submit]"))
+	}
 	b.WriteString("\n\n")
 	b.WriteString(labelStyle.Render("↑/↓/enter: navigate • ←/→: options"))
 
@@ -296,51 +215,12 @@ func (f *Form) renderFields() string {
 func (f *Form) SetSize(width, height int) {
 	f.width = width
 	f.height = height
-
-	for i := range f.fields {
-		if f.fields[i].kind == FieldText {
-			f.fields[i].textInput.Width = width - 10
-		}
-	}
-}
-
-func (f *Form) submittedValues() map[string]any {
-	root := make(map[string]any)
-	for _, field := range f.fields {
-		if field.kind == FieldSubmit {
-			continue
-		}
-		var val any
-		switch field.kind {
-		case FieldText:
-			val = field.textInput.Value()
-		case FieldEnum, FieldBool:
-			val = field.enumPicker.Value()
-		}
-		setNestedValue(root, field.path, val)
-	}
-	return root
-}
-
-func setNestedValue(m map[string]any, path []string, value any) {
-	if len(path) == 0 {
-		return
-	}
-
-	for i := 0; i < len(path)-1; i++ {
-		key := path[i]
-		if _, exists := m[key]; !exists {
-			m[key] = make(map[string]any)
-		}
-		m = m[key].(map[string]any)
-	}
-
-	m[path[len(path)-1]] = value
+	f.root.SetWidth(width - 10)
 }
 
 func (f *Form) invokeRPC() tea.Cmd {
 	methodFullName := string(f.method.FullName())
-	request := f.submittedValues()
+	request := f.root.Value()
 	client := f.client
 
 	return func() tea.Msg {
@@ -352,29 +232,28 @@ func (f *Form) invokeRPC() tea.Cmd {
 	}
 }
 
-func (f *Form) buildFields(fields protoreflect.FieldDescriptors, prefix []string) {
+func (f *Form) buildFieldGroup(fields protoreflect.FieldDescriptors) *fieldGroup {
+	g := &fieldGroup{
+		name:       "",
+		fields:     make([]Field, 0),
+		focusIndex: 0,
+		focused:    false,
+	}
+
 	for i := 0; i < fields.Len(); i++ {
 		field := fields.Get(i)
 		fieldName := string(field.Name())
 
-		currentPath := append(append([]string{}, prefix...), fieldName)
-		fullName := strings.Join(currentPath, ".")
-
-		// todo: add support for lists and maps
 		if field.IsList() || field.IsMap() {
-			f.unsupportedFields = append(f.unsupportedFields, fullName)
+			f.unsupportedFields = append(f.unsupportedFields, fieldName)
 			continue
 		}
 
-		if field.Kind() == protoreflect.MessageKind {
-			nestedFields := field.Message().Fields()
-			f.buildFields(nestedFields, currentPath)
-			continue
-		}
-
-		formField := NewFieldFromProto(field, currentPath)
+		formField := NewFieldFromProto(field)
 		if formField != nil {
-			f.fields = append(f.fields, *formField)
+			g.fields = append(g.fields, *formField)
 		}
 	}
+
+	return g
 }

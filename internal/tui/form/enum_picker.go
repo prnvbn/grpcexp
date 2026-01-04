@@ -11,8 +11,6 @@ type enumItem struct {
 	value string
 }
 
-// enumPicker displays all enum values inline as [ val1, val2, val3 ]
-// with the selected value highlighted.
 type enumPicker struct {
 	items    []enumItem
 	selected int
