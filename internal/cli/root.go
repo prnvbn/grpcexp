@@ -25,7 +25,7 @@ var (
 var rootCmd = &cobra.Command{
 	Use:          "grpcexp",
 	Short:        "grpc explorer",
-	Long:         `An interactive explorer for interacting with grpc servers that implement reflection - https://grpc.io/docs/guides/reflection/`,
+	Long:         `An interactive explorer for interacting with grpc servers.`,
 	RunE:         run,
 	SilenceUsage: true,
 }
