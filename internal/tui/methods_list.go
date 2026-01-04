@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 	"google.golang.org/protobuf/reflect/protoreflect"
@@ -27,6 +28,12 @@ func NewMethodsList(serviceName string, methods []protoreflect.MethodDescriptor)
 	l.SetShowHelp(true)
 	l.SetShowPagination(false)
 
+	l.AdditionalShortHelpKeys = func() []key.Binding {
+		return []key.Binding{
+			key.NewBinding(key.WithKeys("tab"), key.WithHelp("tab", "navigate")),
+		}
+	}
+
 	return MethodsList{
 		list:        l,
 		serviceName: serviceName,
@@ -38,6 +45,26 @@ func (m *MethodsList) SetSize(width, height int) {
 }
 
 func (m *MethodsList) Update(msg tea.Msg) tea.Cmd {
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "tab":
+			if m.list.Index() >= len(m.list.Items())-1 {
+				m.list.Select(0)
+			} else {
+				m.list.CursorDown()
+			}
+			return nil
+		case "shift+tab":
+			if m.list.Index() == 0 {
+				m.list.Select(len(m.list.Items()) - 1)
+			} else {
+				m.list.CursorUp()
+			}
+			return nil
+		}
+	}
+
 	var cmd tea.Cmd
 	m.list, cmd = m.list.Update(msg)
 	return cmd

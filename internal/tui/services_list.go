@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -33,6 +34,12 @@ func NewServicesList(services []string) ServicesList {
 	l.SetShowHelp(true)
 	l.SetShowPagination(false)
 
+	l.AdditionalShortHelpKeys = func() []key.Binding {
+		return []key.Binding{
+			key.NewBinding(key.WithKeys("tab"), key.WithHelp("tab", "navigate")),
+		}
+	}
+
 	return ServicesList{
 		list: l,
 	}
@@ -43,6 +50,26 @@ func (s *ServicesList) SetSize(width, height int) {
 }
 
 func (s *ServicesList) Update(msg tea.Msg) tea.Cmd {
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "tab":
+			if s.list.Index() >= len(s.list.Items())-1 {
+				s.list.Select(0)
+			} else {
+				s.list.CursorDown()
+			}
+			return nil
+		case "shift+tab":
+			if s.list.Index() == 0 {
+				s.list.Select(len(s.list.Items()) - 1)
+			} else {
+				s.list.CursorUp()
+			}
+			return nil
+		}
+	}
+
 	var cmd tea.Cmd
 	s.list, cmd = s.list.Update(msg)
 	return cmd
