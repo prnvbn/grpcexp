@@ -7,11 +7,12 @@
 package echov1
 
 import (
-	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
-	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
+
+	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
+	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 )
 
 const (
@@ -207,7 +208,8 @@ type Message struct {
 	Int64Value    int64                  `protobuf:"varint,5,opt,name=int64_value,json=int64Value,proto3" json:"int64_value,omitempty"`
 	FloatValue    float32                `protobuf:"fixed32,6,opt,name=float_value,json=floatValue,proto3" json:"float_value,omitempty"`
 	DoubleValue   float64                `protobuf:"fixed64,7,opt,name=double_value,json=doubleValue,proto3" json:"double_value,omitempty"`
-	NestedMessage *NestedMessage         `protobuf:"bytes,8,opt,name=nested_message,json=nestedMessage,proto3" json:"nested_message,omitempty"`
+	Strings       []string               `protobuf:"bytes,8,rep,name=strings,proto3" json:"strings,omitempty"`
+	NestedMessage *NestedMessage         `protobuf:"bytes,9,opt,name=nested_message,json=nestedMessage,proto3" json:"nested_message,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -291,6 +293,13 @@ func (x *Message) GetDoubleValue() float64 {
 	return 0
 }
 
+func (x *Message) GetStrings() []string {
+	if x != nil {
+		return x.Strings
+	}
+	return nil
+}
+
 func (x *Message) GetNestedMessage() *NestedMessage {
 	if x != nil {
 		return x.NestedMessage
@@ -312,7 +321,7 @@ const file_cmd_testserver_echo_echo_proto_rawDesc = "" +
 	"\vint32_value\x18\x03 \x01(\x05R\n" +
 	"int32Value\x12W\n" +
 	"\x18even_more_nested_message\x18\x04 \x01(\v2\x1e.echo.v1.EvenMoreNestedMessageR\x15evenMoreNestedMessage\x12Z\n" +
-	"\x1aeven_more_nested_message_2\x18\x05 \x01(\v2\x1e.echo.v1.EvenMoreNestedMessageR\x16evenMoreNestedMessage2\"\xef\x02\n" +
+	"\x1aeven_more_nested_message_2\x18\x05 \x01(\v2\x1e.echo.v1.EvenMoreNestedMessageR\x16evenMoreNestedMessage2\"\x89\x03\n" +
 	"\aMessage\x12\x18\n" +
 	"\amessage\x18\x01 \x01(\tR\amessage\x12\x18\n" +
 	"\aboolean\x18\x02 \x01(\bR\aboolean\x12)\n" +
@@ -323,8 +332,9 @@ const file_cmd_testserver_echo_echo_proto_rawDesc = "" +
 	"int64Value\x12\x1f\n" +
 	"\vfloat_value\x18\x06 \x01(\x02R\n" +
 	"floatValue\x12!\n" +
-	"\fdouble_value\x18\a \x01(\x01R\vdoubleValue\x12=\n" +
-	"\x0enested_message\x18\b \x01(\v2\x16.echo.v1.NestedMessageR\rnestedMessage\"@\n" +
+	"\fdouble_value\x18\a \x01(\x01R\vdoubleValue\x12\x18\n" +
+	"\astrings\x18\b \x03(\tR\astrings\x12=\n" +
+	"\x0enested_message\x18\t \x01(\v2\x16.echo.v1.NestedMessageR\rnestedMessage\"@\n" +
 	"\x04Enum\x12\x14\n" +
 	"\x10ENUM_UNSPECIFIED\x10\x00\x12\x10\n" +
 	"\fENUM_VALUE_1\x10\x01\x12\x10\n" +

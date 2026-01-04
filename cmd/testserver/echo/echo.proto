@@ -33,7 +33,8 @@ message Message {
   float float_value = 6;
   double double_value = 7;
 
-  NestedMessage nested_message = 8;
+  repeated string strings = 8;
+  NestedMessage nested_message = 9;
 }
 
 service EchoService {
