@@ -1,6 +1,6 @@
 # grpcexp
 
-`grpcexp` is an interactive explorer for interacting with grpc servers. It's basically a tui on top of [grpcurl](https://github.com/fullstorydev/grpcurl).
+`grpcexp` is an interactive explorer for interacting with grpc servers. It's basically a tui on top of [`grpcurl`](https://github.com/fullstorydev/grpcurl).
 
 ## Installation
 
