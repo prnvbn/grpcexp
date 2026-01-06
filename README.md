@@ -2,6 +2,8 @@
 
 `grpcexp` is an interactive explorer for interacting with grpc servers. It's basically a tui on top of [`grpcurl`](https://github.com/fullstorydev/grpcurl).
 
+![Demo](demo.svg)
+
 ## Installation
 
 ### Linux or MacOS
@@ -28,8 +30,6 @@ source <(grpcexp completion bash)
 ### Windows
 
 Windows installation instructions are a WIP. In the meantime, you can download the latest release from the [releases page](https://github.com/prnvbn/grpcexp/releases)
-
-## Getting Started
 
 ## Why
 
