@@ -24,21 +24,80 @@ case $platform in
 esac
 
 echo "Detected platform: $platform -> Target binary: $target_platform"
-echo "Downloading the latest grpcexp binary..."
+echo "Fetching release information..."
 
-# Fetch the latest release URL
-download_url=$(curl -s https://api.github.com/repos/prnvbn/grpcexp/releases/latest | 
-               grep "browser_download_url" | 
-               cut -d '"' -f 4 | 
-               grep "$target_platform" || true)
+# Fetch the latest release info with error handling
+api_response=$(curl -sf -w "\n%{http_code}" https://api.github.com/repos/prnvbn/grpcexp/releases/latest 2>/dev/null || echo "")
 
-if [[ -z "$download_url" ]]; then
-    echo "Error: Could not find a compatible binary for $target_platform."
+if [[ -z "$api_response" ]]; then
+    echo "Error: Failed to connect to GitHub API. Please check your internet connection."
     exit 1
 fi
 
-# Download and make executable
-curl -sL "$download_url" -o grpcexp
+# Extract HTTP status code (last line)
+http_code=$(echo "$api_response" | tail -n1)
+api_body=$(echo "$api_response" | sed '$d')
+
+# Check if we got an error response
+if [[ "$http_code" != "200" ]]; then
+    echo "Error: GitHub API returned status code $http_code"
+    if echo "$api_body" | grep -q "<html"; then
+        echo "Received HTML error page instead of JSON. This may be a temporary issue."
+    fi
+    exit 1
+fi
+
+# Check if response is HTML (error page) instead of JSON
+if echo "$api_body" | grep -q "^<html"; then
+    echo "Error: Received HTML error page instead of JSON from GitHub API."
+    echo "This may be a temporary issue. Please try again later."
+    exit 1
+fi
+
+# Parse download URL - try jq first, fallback to grep/cut
+if command -v jq &>/dev/null; then
+    download_url=$(echo "$api_body" | jq -r ".assets[] | select(.name | contains(\"$target_platform\")) | .browser_download_url" | head -n1)
+else
+    # Fallback: parse JSON with grep/cut (more robust)
+    download_url=$(echo "$api_body" | grep -o "\"browser_download_url\":\"[^\"]*$target_platform[^\"]*\"" | cut -d '"' -f 4 | head -n1)
+fi
+
+if [[ -z "$download_url" ]] || [[ "$download_url" == "null" ]]; then
+    echo "Error: Could not find a compatible binary for $target_platform."
+    echo "Available assets:"
+    if command -v jq &>/dev/null; then
+        echo "$api_body" | jq -r ".assets[].name" || true
+    else
+        echo "$api_body" | grep -o "\"name\":\"[^\"]*\"" | cut -d '"' -f 4 || true
+    fi
+    exit 1
+fi
+
+echo "Downloading binary from: $download_url"
+
+# Download with error handling and validation
+if ! curl -sfL "$download_url" -o grpcexp; then
+    echo "Error: Failed to download binary. Please check your internet connection."
+    exit 1
+fi
+
+# Validate downloaded file is not HTML/error page
+if file grpcexp 2>/dev/null | grep -qi "html\|text"; then
+    echo "Error: Downloaded file appears to be HTML/text instead of a binary."
+    echo "This may indicate a download error. First few lines:"
+    head -n3 grpcexp
+    rm -f grpcexp
+    exit 1
+fi
+
+# Check file size (should be > 0 and reasonable)
+file_size=$(stat -f%z grpcexp 2>/dev/null || stat -c%s grpcexp 2>/dev/null || echo "0")
+if [[ "$file_size" -lt 1000 ]]; then
+    echo "Error: Downloaded file is too small ($file_size bytes). This may indicate a download error."
+    rm -f grpcexp
+    exit 1
+fi
+
 chmod +x grpcexp
 
 echo "-------------------------------------------------------------------"
