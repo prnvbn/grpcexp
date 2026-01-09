@@ -217,6 +217,13 @@ func (f *Form) SetSize(width, height int) {
 	f.root.SetWidth(width - 10)
 }
 
+func (f *Form) AcceptsTextInput() bool {
+	if f.state != formStateInput {
+		return false
+	}
+	return f.root.AcceptsTextInput()
+}
+
 func (f *Form) invokeRPC() tea.Cmd {
 	methodFullName := string(f.method.FullName())
 	request := f.root.Value()

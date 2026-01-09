@@ -238,6 +238,9 @@ func (g *fieldGroup) PrevField() bool {
 }
 
 func (g *fieldGroup) AcceptsTextInput() bool {
+	if !g.focused {
+		return false
+	}
 	field := g.focusedField()
 	if field == nil {
 		return false

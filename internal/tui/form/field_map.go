@@ -269,7 +269,7 @@ func (m *fieldMap) PrevField() bool {
 }
 
 func (m *fieldMap) AcceptsTextInput() bool {
-	if m.focusTarget != mapFocusKey && m.focusTarget != mapFocusValue {
+	if !m.focused || (m.focusTarget != mapFocusKey && m.focusTarget != mapFocusValue) {
 		return false
 	}
 	entry := m.focusedEntry()

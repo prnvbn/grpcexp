@@ -64,7 +64,12 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m *Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
 	switch msg.String() {
-	case "q", "ctrl+c":
+	case "q":
+		if m.state == screenCallMethod && m.callMethodForm != nil && m.callMethodForm.AcceptsTextInput() {
+			return *m, nil, false
+		}
+		fallthrough
+	case "ctrl+c":
 		return *m, tea.Quit, true
 	case "esc":
 		model, cmd := m.goBack()

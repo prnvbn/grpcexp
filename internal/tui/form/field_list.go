@@ -210,7 +210,7 @@ func (l *fieldList) PrevField() bool {
 }
 
 func (l *fieldList) AcceptsTextInput() bool {
-	if l.focusTarget != focusItem {
+	if !l.focused || l.focusTarget != focusItem {
 		return false
 	}
 	item := l.focusedItem()

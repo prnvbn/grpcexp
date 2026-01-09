@@ -145,11 +145,12 @@ func (o *fieldOneof) PrevField() bool {
 }
 
 func (o *fieldOneof) AcceptsTextInput() bool {
-	if o.focusState == oneofFocusField {
-		field := o.selectedField()
-		if field != nil {
-			return field.AcceptsTextInput()
-		}
+	if !o.focused || o.focusState != oneofFocusField {
+		return false
+	}
+	field := o.selectedField()
+	if field != nil {
+		return field.AcceptsTextInput()
 	}
 	return false
 }
