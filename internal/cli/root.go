@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"os"
 	"strings"
-	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/prnvbn/grpcexp/internal/grpc"
@@ -39,9 +38,6 @@ func run(cmd *cobra.Command, args []string) error {
 		target = fmt.Sprintf("localhost:%d", port)
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
 	var creds credentials.TransportCredentials
 	if useTLS {
 		creds = credentials.NewTLS(&tls.Config{})
@@ -49,7 +45,7 @@ func run(cmd *cobra.Command, args []string) error {
 		creds = insecure.NewCredentials()
 	}
 
-	grpcClient, err := grpc.NewClient(ctx, grpc.Config{
+	grpcClient, err := grpc.NewClient(context.Background(), grpc.Config{
 		Target:    target,
 		Creds:     creds,
 		UserAgent: "grpcexp/" + strings.TrimSpace(version),
