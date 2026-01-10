@@ -16,6 +16,21 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/prnvbn/grpcexp/main/inst
 
 Move the binary to a directory in your PATH. For e.g. `/usr/local/bin` on linux.
 
+### via `go install`
+
+```bash
+go install github.com/prnvbn/grpcexp/cmd/grpcexp@latest
+```
+
+### Windows
+
+Windows installation instructions are a WIP. In the meantime, you can download the latest release from the [releases page](https://github.com/prnvbn/grpcexp/releases)
+
+> [!NOTE]
+>  
+> To update `grpcexp` to the latest version, simply re-run any of the installation methods above.
+> They always install the most recent release.
+
 #### Enabling Command Autocompletion
 
 To enable autocomplete, add the following to your `.bashrc` or `.bash_profile` file:
@@ -24,12 +39,6 @@ To enable autocomplete, add the following to your `.bashrc` or `.bash_profile` f
 # you can also generate completions for zsh and fish shells by replacing bash with zsh or fish
 source <(grpcexp completion bash)
 ```
-
-> NOTE: don't forget to restart your terminal or run `source ~/.bashrc`
-
-### Windows
-
-Windows installation instructions are a WIP. In the meantime, you can download the latest release from the [releases page](https://github.com/prnvbn/grpcexp/releases)
 
 ## Why
 
