@@ -39,6 +39,13 @@ func (g *fieldGroup) Empty() bool {
 func (g *fieldGroup) Value() map[string]any {
 	fields := make(map[string]any)
 	for _, field := range g.fields {
+		if field.kind == FieldOneof {
+			value := field.oneofField.Value()
+			for k, v := range value {
+				fields[k] = v
+			}
+			continue
+		}
 		fields[field.name] = field.Value()
 	}
 	return fields
