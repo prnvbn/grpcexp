@@ -157,7 +157,7 @@ func NewFieldFromProto(field protoreflect.FieldDescriptor) *Field {
 
 	switch field.Kind() {
 	case protoreflect.StringKind:
-		return NewTextField(name, fmt.Sprintf("Enter %s...", name), 256, nil)
+		return NewTextField(name, fmt.Sprintf("Enter %s...", name), 0, nil)
 
 	case protoreflect.BoolKind:
 		return NewBoolField(name)
