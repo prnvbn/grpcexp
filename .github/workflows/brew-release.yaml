@@ -1,0 +1,107 @@
+name: Update Homebrew Formula
+
+on:
+  release:
+    types: [published]
+
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to update the formula to (optional)"
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+jobs:
+  update-formula:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.GH_APP_ID }}
+          private-key: ${{ secrets.GH_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: |
+            homebrew-tap
+
+      - name: Checkout homebrew-tap
+        uses: actions/checkout@v3
+        with:
+          repository: prnvbn/homebrew-tap
+          token: ${{ steps.app-token.outputs.token }}
+          ref: main
+          path: homebrew-tap
+
+      - name: Set up Git
+        run: |
+          git config --global user.name "prnvbn-homebrew-tap-updater[bot]"
+          git config --global user.email "prnvbn-homebrew-tap-updater@users.noreply.github.com"
+
+      - name: Update Homebrew formula
+        run: |
+          set -e
+
+          cd homebrew-tap
+
+          FORMULA="Formula/grpcexp.rb"
+
+          # Determine version based on trigger type
+          if [ -n "${{ github.event.inputs.version }}" ]; then
+            TAG_VERSION="${{ github.event.inputs.version }}"
+          elif [ "${{ github.event_name }}" = "release" ]; then
+            TAG_VERSION="${{ github.ref_name }}"
+          else
+            TAG_VERSION="${GITHUB_REF_NAME#refs/tags/}"
+          fi
+
+          # Extract version without 'v' prefix for Homebrew formula
+          VERSION=${TAG_VERSION#v}
+
+          # Ensure TAG_VERSION has 'v' prefix for URL
+          if [[ ! "$TAG_VERSION" =~ ^v ]]; then
+            TAG_VERSION="v${TAG_VERSION}"
+          fi
+
+          echo "Tag version: $TAG_VERSION"
+          echo "Formula version: $VERSION"
+
+          # Update version line
+          sed -i -E "s/^  version \".*\"/  version \"${VERSION}\"/" $FORMULA
+
+          # Map binaries to regex-friendly identifiers
+          declare -A BINARIES=(
+            ["grpcexp-darwin-arm64"]="darwin-arm64"
+            ["grpcexp-darwin-amd64"]="darwin-amd64"
+            ["grpcexp-linux-arm64"]="linux-arm64"
+            ["grpcexp-linux-amd64"]="linux-amd64"
+          )
+
+          # Loop over each binary, download it, calculate SHA, and replace the correct sha256 line
+          for file in "${!BINARIES[@]}"; do
+            url="https://github.com/prnvbn/grpcexp/releases/download/${TAG_VERSION}/${file}"
+            echo "Downloading $url"
+            curl -L -f -o /tmp/$file $url
+
+            sha256=$(shasum -a 256 /tmp/$file | awk '{print $1}')
+            echo "SHA256 for $file: $sha256"
+
+            # Replace the sha256 line for this binary only
+            sed -i -E "/${file}/{n;s/sha256 \".*\"/sha256 \"${sha256}\"/}" $FORMULA
+          done
+
+          # Commit and push only if there are changes
+          if ! git diff --quiet; then
+            git add $FORMULA
+            git commit -m "Update grpcexp formula to ${VERSION}"
+
+            APP_TOKEN="${{ steps.app-token.outputs.token }}"
+            git remote set-url origin https://x-access-token:${APP_TOKEN}@github.com/prnvbn/homebrew-tap.git
+            git push origin main
+          else
+            echo "No changes to commit"
+          fi
