@@ -154,8 +154,9 @@ func validateFloat(s string) error {
 
 func NewFieldFromProto(field protoreflect.FieldDescriptor) *Field {
 	name := string(field.Name())
+	kind := field.Kind()
 
-	switch field.Kind() {
+	switch kind {
 	case protoreflect.StringKind:
 		return NewTextField(name, fmt.Sprintf("Enter %s...", name), 0, nil)
 
@@ -165,14 +166,14 @@ func NewFieldFromProto(field protoreflect.FieldDescriptor) *Field {
 	case protoreflect.Int32Kind, protoreflect.Int64Kind,
 		protoreflect.Sint32Kind, protoreflect.Sint64Kind,
 		protoreflect.Sfixed32Kind, protoreflect.Sfixed64Kind:
-		return NewTextField(name, "Enter integer...", 64, validateInt)
+		return NewTextField(name, fmt.Sprintf("Enter %s...", kind.String()), 64, validateInt)
 
 	case protoreflect.Uint32Kind, protoreflect.Uint64Kind,
 		protoreflect.Fixed32Kind, protoreflect.Fixed64Kind:
-		return NewTextField(name, "Enter positive integer...", 64, validateUint)
+		return NewTextField(name, fmt.Sprintf("Enter %s...", kind.String()), 64, validateUint)
 
 	case protoreflect.FloatKind, protoreflect.DoubleKind:
-		return NewTextField(name, "Enter number...", 64, validateFloat)
+		return NewTextField(name, fmt.Sprintf("Enter %s...", kind.String()), 64, validateFloat)
 
 	case protoreflect.EnumKind:
 		return NewEnumField(name, field)
