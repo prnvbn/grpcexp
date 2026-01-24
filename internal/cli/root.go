@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/prnvbn/grpcexp/internal/grpc"
@@ -20,6 +21,7 @@ var (
 	addr     string
 	protoset string
 	useTLS   bool
+	timeout  time.Duration
 )
 
 var rootCmd = &cobra.Command{
@@ -45,7 +47,9 @@ func run(cmd *cobra.Command, args []string) error {
 		creds = insecure.NewCredentials()
 	}
 
-	grpcClient, err := grpc.NewClient(context.Background(), grpc.Config{
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+	grpcClient, err := grpc.NewClient(ctx, grpc.Config{
 		Target:    target,
 		Creds:     creds,
 		UserAgent: "grpcexp/" + strings.TrimSpace(version),
@@ -80,4 +84,5 @@ func init() {
 	rootCmd.Flags().StringVarP(&addr, "addr", "a", "", "grpc server address")
 	rootCmd.Flags().StringVar(&protoset, "protoset", "", "path to protoset file (uses server reflection if not specified)")
 	rootCmd.Flags().BoolVar(&useTLS, "tls", false, "use TLS to connect to the server")
+	rootCmd.Flags().DurationVar(&timeout, "timeout", 10*time.Second, "connection timeout")
 }
