@@ -75,6 +75,11 @@ func (f *Form) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch f.state {
 		case formStateResult:
 			switch msg.String() {
+			case "r":
+				f.state = formStateInput
+				f.root.Blur()
+				f.submitFocused = true
+				return f, nil
 			case "y":
 				content := f.response
 				if f.responseErr != nil {
@@ -173,7 +178,7 @@ func (f *Form) View() string {
 			b.WriteString(f.response)
 		}
 		b.WriteString("\n\n")
-		b.WriteString(labelStyle.Render("esc: back • y: copy response • q: quit"))
+		b.WriteString(labelStyle.Render("esc: back • r: resubmit • y: copy response • q: quit"))
 	case formStateInput:
 		b.WriteString(f.renderFields())
 	default:
