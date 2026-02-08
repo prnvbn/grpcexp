@@ -3,7 +3,7 @@ syntax = "proto3";
 package echo.v1;
 
 import "google/protobuf/timestamp.proto";
-
+import "google/protobuf/duration.proto";
 
 message EvenMoreNestedMessage {
   string message = 1;
@@ -49,6 +49,7 @@ message Message {
   }
 
   google.protobuf.Timestamp timestamp = 16;
+  google.protobuf.Duration duration = 17;
 }
 
 service EchoService {

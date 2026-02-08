@@ -153,6 +153,17 @@ func validateFloat(s string) error {
 	return nil
 }
 
+func validateDuration(s string) error {
+	if s == "" {
+		return nil
+	}
+	_, err := time.ParseDuration(s)
+	if err != nil {
+		return fmt.Errorf("must be a valid duration (e.g., 10s)")
+	}
+	return nil
+}
+
 func validateTimestamp(s string) error {
 	if s == "" {
 		return nil
@@ -203,6 +214,8 @@ func NewFieldFromProto(field protoreflect.FieldDescriptor) *Field {
 		switch msgDesc.FullName() {
 		case "google.protobuf.Timestamp":
 			return NewTextField(name, "Enter RFC 3339 timestamp (e.g., 2017-01-15T01:30:15.01Z)...", 64, validateTimestamp)
+		case "google.protobuf.Duration":
+			return NewTextField(name, "Enter duration (e.g., 10s)...", 64, validateDuration)
 		default:
 			return NewFieldGroup(name, field)
 		}
