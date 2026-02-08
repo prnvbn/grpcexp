@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
@@ -152,6 +153,21 @@ func validateFloat(s string) error {
 	return nil
 }
 
+func validateTimestamp(s string) error {
+	if s == "" {
+		return nil
+	}
+	_, err := time.Parse(time.RFC3339Nano, s)
+	if err != nil {
+		// Try RFC3339 format without nanoseconds
+		_, err = time.Parse(time.RFC3339, s)
+		if err != nil {
+			return fmt.Errorf("must be a valid RFC 3339 timestamp (e.g., 2017-01-15T01:30:15.01Z)")
+		}
+	}
+	return nil
+}
+
 func NewFieldFromProto(field protoreflect.FieldDescriptor) *Field {
 	name := string(field.Name())
 	kind := field.Kind()
@@ -181,7 +197,15 @@ func NewFieldFromProto(field protoreflect.FieldDescriptor) *Field {
 	case protoreflect.BytesKind:
 		return NewTextField(name, "Enter hex bytes (e.g., deadbeef)...", 512, nil)
 	case protoreflect.MessageKind:
-		return NewFieldGroup(name, field)
+		msgDesc := field.Message()
+
+		// support for well-known types
+		switch msgDesc.FullName() {
+		case "google.protobuf.Timestamp":
+			return NewTextField(name, "Enter RFC 3339 timestamp (e.g., 2017-01-15T01:30:15.01Z)...", 64, validateTimestamp)
+		default:
+			return NewFieldGroup(name, field)
+		}
 	default:
 		return nil
 	}
