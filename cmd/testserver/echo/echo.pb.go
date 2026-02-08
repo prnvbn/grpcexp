@@ -7,12 +7,12 @@
 package echov1
 
 import (
+	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
+	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
-
-	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
-	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 )
 
 const (
@@ -218,7 +218,8 @@ type Message struct {
 	//	*Message_OneofInt64Value
 	//	*Message_OneofFloatValue
 	//	*Message_OneofDoubleValue
-	OneofValue    isMessage_OneofValue `protobuf_oneof:"oneof_value"`
+	OneofValue    isMessage_OneofValue   `protobuf_oneof:"oneof_value"`
+	Timestamp     *timestamppb.Timestamp `protobuf:"bytes,16,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -375,6 +376,13 @@ func (x *Message) GetOneofDoubleValue() float64 {
 	return 0
 }
 
+func (x *Message) GetTimestamp() *timestamppb.Timestamp {
+	if x != nil {
+		return x.Timestamp
+	}
+	return nil
+}
+
 type isMessage_OneofValue interface {
 	isMessage_OneofValue()
 }
@@ -413,7 +421,7 @@ var File_cmd_testserver_echo_echo_proto protoreflect.FileDescriptor
 
 const file_cmd_testserver_echo_echo_proto_rawDesc = "" +
 	"\n" +
-	"\x1ecmd/testserver/echo/echo.proto\x12\aecho.v1\"K\n" +
+	"\x1ecmd/testserver/echo/echo.proto\x12\aecho.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"K\n" +
 	"\x15EvenMoreNestedMessage\x12\x18\n" +
 	"\amessage\x18\x01 \x01(\tR\amessage\x12\x18\n" +
 	"\aboolean\x18\x02 \x01(\bR\aboolean\"\x99\x02\n" +
@@ -423,7 +431,7 @@ const file_cmd_testserver_echo_echo_proto_rawDesc = "" +
 	"\vint32_value\x18\x03 \x01(\x05R\n" +
 	"int32Value\x12W\n" +
 	"\x18even_more_nested_message\x18\x04 \x01(\v2\x1e.echo.v1.EvenMoreNestedMessageR\x15evenMoreNestedMessage\x12Z\n" +
-	"\x1aeven_more_nested_message_2\x18\x05 \x01(\v2\x1e.echo.v1.EvenMoreNestedMessageR\x16evenMoreNestedMessage2\"\xfc\x05\n" +
+	"\x1aeven_more_nested_message_2\x18\x05 \x01(\v2\x1e.echo.v1.EvenMoreNestedMessageR\x16evenMoreNestedMessage2\"\xb6\x06\n" +
 	"\aMessage\x12\x18\n" +
 	"\amessage\x18\x01 \x01(\tR\amessage\x12\x18\n" +
 	"\aboolean\x18\x02 \x01(\bR\aboolean\x12)\n" +
@@ -443,7 +451,8 @@ const file_cmd_testserver_echo_echo_proto_rawDesc = "" +
 	"\x11oneof_int32_value\x18\f \x01(\x05H\x00R\x0foneofInt32Value\x12,\n" +
 	"\x11oneof_int64_value\x18\r \x01(\x03H\x00R\x0foneofInt64Value\x12,\n" +
 	"\x11oneof_float_value\x18\x0e \x01(\x02H\x00R\x0foneofFloatValue\x12.\n" +
-	"\x12oneof_double_value\x18\x0f \x01(\x01H\x00R\x10oneofDoubleValue\x1a;\n" +
+	"\x12oneof_double_value\x18\x0f \x01(\x01H\x00R\x10oneofDoubleValue\x128\n" +
+	"\ttimestamp\x18\x10 \x01(\v2\x1a.google.protobuf.TimestampR\ttimestamp\x1a;\n" +
 	"\rMapValueEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"@\n" +
@@ -476,6 +485,7 @@ var file_cmd_testserver_echo_echo_proto_goTypes = []any{
 	(*NestedMessage)(nil),         // 2: echo.v1.NestedMessage
 	(*Message)(nil),               // 3: echo.v1.Message
 	nil,                           // 4: echo.v1.Message.MapValueEntry
+	(*timestamppb.Timestamp)(nil), // 5: google.protobuf.Timestamp
 }
 var file_cmd_testserver_echo_echo_proto_depIdxs = []int32{
 	1, // 0: echo.v1.NestedMessage.even_more_nested_message:type_name -> echo.v1.EvenMoreNestedMessage
@@ -483,13 +493,14 @@ var file_cmd_testserver_echo_echo_proto_depIdxs = []int32{
 	0, // 2: echo.v1.Message.enum:type_name -> echo.v1.Message.Enum
 	2, // 3: echo.v1.Message.nested_message:type_name -> echo.v1.NestedMessage
 	4, // 4: echo.v1.Message.map_value:type_name -> echo.v1.Message.MapValueEntry
-	3, // 5: echo.v1.EchoService.Echo:input_type -> echo.v1.Message
-	3, // 6: echo.v1.EchoService.Echo:output_type -> echo.v1.Message
-	6, // [6:7] is the sub-list for method output_type
-	5, // [5:6] is the sub-list for method input_type
-	5, // [5:5] is the sub-list for extension type_name
-	5, // [5:5] is the sub-list for extension extendee
-	0, // [0:5] is the sub-list for field type_name
+	5, // 5: echo.v1.Message.timestamp:type_name -> google.protobuf.Timestamp
+	3, // 6: echo.v1.EchoService.Echo:input_type -> echo.v1.Message
+	3, // 7: echo.v1.EchoService.Echo:output_type -> echo.v1.Message
+	7, // [7:8] is the sub-list for method output_type
+	6, // [6:7] is the sub-list for method input_type
+	6, // [6:6] is the sub-list for extension type_name
+	6, // [6:6] is the sub-list for extension extendee
+	0, // [0:6] is the sub-list for field type_name
 }
 
 func init() { file_cmd_testserver_echo_echo_proto_init() }
