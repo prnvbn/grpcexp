@@ -89,6 +89,8 @@ func (f *Form) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				if err != nil {
 					fmt.Fprintf(os.Stderr, "error writing to clipboard: %v\n", err)
 				}
+			case "ctrl+y":
+				f.copyGRPCURLCommand()
 			case "q":
 				return f, tea.Quit
 			}
@@ -110,6 +112,9 @@ func (f *Form) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (f *Form) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
 	switch msg.String() {
+	case "ctrl+y":
+		f.copyGRPCURLCommand()
+		return f, nil, true
 	case "tab", "down":
 		f.nextField()
 		return f, nil, true
@@ -178,7 +183,7 @@ func (f *Form) View() string {
 			b.WriteString(f.response)
 		}
 		b.WriteString("\n\n")
-		b.WriteString(labelStyle.Render("esc: back • r: resubmit • y: copy response • q: quit"))
+		b.WriteString(labelStyle.Render("esc: back • r: resubmit • y: copy response • ctrl+y: copy grpcurl • q: quit"))
 	case formStateInput:
 		b.WriteString(f.renderFields())
 	default:
@@ -211,7 +216,7 @@ func (f *Form) renderFields() string {
 		b.WriteString(labelStyle.Render("  [Submit]"))
 	}
 	b.WriteString("\n\n")
-	b.WriteString(labelStyle.Render("↑/↓/tab: navigate • ←/→: options"))
+	b.WriteString(labelStyle.Render("↑/↓/tab: navigate • ←/→: options • ctrl+y: copy grpcurl"))
 
 	return b.String()
 }
@@ -240,6 +245,17 @@ func (f *Form) invokeRPC() tea.Cmd {
 
 		response, err := client.InvokeRPC(ctx, methodFullName, request)
 		return rpcResultMsg{response: response, err: err}
+	}
+}
+
+func (f *Form) copyGRPCURLCommand() {
+	command, err := f.client.GRPCURLCommand(string(f.method.FullName()), f.root.Value())
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "error building grpcurl command: %v\n", err)
+		return
+	}
+	if err := clipboard.WriteAll(command); err != nil {
+		fmt.Fprintf(os.Stderr, "error writing to clipboard: %v\n", err)
 	}
 }
 

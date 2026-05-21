@@ -6,6 +6,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"sort"
+	"strings"
+	"unicode"
 
 	"github.com/fullstorydev/grpcurl"
 	"github.com/jhump/protoreflect/desc" //nolint:staticcheck // SA1019: Deprecated package but required by grpcurl
@@ -25,6 +27,7 @@ type Config struct {
 type Client struct {
 	source grpcurl.DescriptorSource
 	conn   *grpc.ClientConn
+	config Config
 }
 
 func NewClient(ctx context.Context, config Config) (*Client, error) {
@@ -48,7 +51,7 @@ func NewClient(ctx context.Context, config Config) (*Client, error) {
 		source = grpcurl.DescriptorSourceFromServer(ctx, refClient)
 	}
 
-	return &Client{source: source, conn: cc}, nil
+	return &Client{source: source, conn: cc, config: config}, nil
 }
 
 func (c *Client) InvokeRPC(ctx context.Context, methodFullName string, request map[string]any) (string, error) {
@@ -81,6 +84,40 @@ func (c *Client) InvokeRPC(ctx context.Context, methodFullName string, request m
 	}
 
 	return responseBuf.String(), nil
+}
+
+// GRPCURLCommand returns a shell-safe grpcurl command for the current client session.
+func (c *Client) GRPCURLCommand(methodFullName string, request map[string]any) (string, error) {
+	jsonData, err := json.Marshal(request)
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal request: %w", err)
+	}
+
+	args := []string{"grpcurl"}
+	if c.config.Creds.Info().SecurityProtocol == "insecure" {
+		args = append(args, "-plaintext")
+	}
+	if c.config.Protoset != "" {
+		args = append(args, "-protoset", c.config.Protoset)
+	}
+	if c.config.UserAgent != "" {
+		args = append(args, "-user-agent", c.config.UserAgent)
+	}
+	args = append(args, "-d", string(jsonData), c.config.Target, methodFullName)
+
+	for i, arg := range args {
+		args[i] = shellQuote(arg)
+	}
+	return strings.Join(args, " "), nil
+}
+
+func shellQuote(s string) string {
+	if s != "" && strings.IndexFunc(s, func(r rune) bool {
+		return !unicode.IsLetter(r) && !unicode.IsDigit(r) && !strings.ContainsRune("_+-=.,/:@", r)
+	}) == -1 {
+		return s
+	}
+	return "'" + strings.ReplaceAll(s, "'", "'\"'\"'") + "'"
 }
 
 func (c *Client) ListServices() ([]string, error) {
