@@ -2,7 +2,7 @@ name: Update Homebrew Formula
 
 on:
   release:
-    types: [published]
+    types: [edited]
 
   workflow_dispatch:
     inputs:
@@ -15,7 +15,39 @@ permissions:
   contents: write
 
 jobs:
+  check-latest:
+    if: ${{ github.event_name == 'release' }}
+    runs-on: ubuntu-latest
+    outputs:
+      is-latest: ${{ steps.release.outputs.is-latest }}
+
+    steps:
+      - name: Check edited release is latest
+        id: release
+        uses: actions/github-script@v7
+        with:
+          script: |
+            let latest;
+            try {
+              latest = await github.rest.repos.getLatestRelease({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+              });
+            } catch (error) {
+              if (error.status === 404) {
+                core.info("Repository does not have a latest full release yet.");
+                core.setOutput("is-latest", "false");
+                return;
+              }
+              throw error;
+            }
+            const isLatest = latest.data.id === context.payload.release.id;
+            core.info(`Edited release ${context.payload.release.tag_name}; latest release is ${latest.data.tag_name}`);
+            core.setOutput("is-latest", String(isLatest));
+
   update-formula:
+    needs: [check-latest]
+    if: ${{ always() && (github.event_name == 'workflow_dispatch' || needs.check-latest.outputs.is-latest == 'true') }}
     runs-on: ubuntu-latest
 
     steps:
