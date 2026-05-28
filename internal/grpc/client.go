@@ -46,9 +46,10 @@ func NewClient(ctx context.Context, config Config) (*Client, error) {
 			return nil, fmt.Errorf("failed to load protoset file: %w", err)
 		}
 	} else {
-		refClient := grpcreflect.NewClientAuto(ctx, cc)
+		refCtx := context.Background()
+		refClient := grpcreflect.NewClientAuto(refCtx, cc)
 		refClient.AllowMissingFileDescriptors()
-		source = grpcurl.DescriptorSourceFromServer(ctx, refClient)
+		source = grpcurl.DescriptorSourceFromServer(refCtx, refClient)
 	}
 
 	return &Client{source: source, conn: cc, config: config}, nil
