@@ -54,4 +54,5 @@ message Message {
 
 service EchoService {
   rpc Echo(Message) returns (Message);
+  rpc EchoStream(stream Message) returns (stream Message);
 }

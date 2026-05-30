@@ -470,9 +470,11 @@ const file_cmd_testserver_echo_echo_proto_rawDesc = "" +
 	"\x10ENUM_UNSPECIFIED\x10\x00\x12\x10\n" +
 	"\fENUM_VALUE_1\x10\x01\x12\x10\n" +
 	"\fENUM_VALUE_2\x10\x02B\r\n" +
-	"\voneof_value29\n" +
+	"\voneof_value2o\n" +
 	"\vEchoService\x12*\n" +
-	"\x04Echo\x12\x10.echo.v1.Message\x1a\x10.echo.v1.MessageB\x9c\x01\n" +
+	"\x04Echo\x12\x10.echo.v1.Message\x1a\x10.echo.v1.Message\x124\n" +
+	"\n" +
+	"EchoStream\x12\x10.echo.v1.Message\x1a\x10.echo.v1.Message(\x010\x01B\x9c\x01\n" +
 	"\vcom.echo.v1B\tEchoProtoP\x01ZCgithub.com/prnvbn/grpcexp/cmd/testserver/cmd/testserver/echo;echov1\xa2\x02\x03EXX\xaa\x02\aEcho.V1\xca\x02\bEcho_\\V1\xe2\x02\x14Echo_\\V1\\GPBMetadata\xea\x02\bEcho::V1b\x06proto3"
 
 var (
@@ -507,9 +509,11 @@ var file_cmd_testserver_echo_echo_proto_depIdxs = []int32{
 	5, // 5: echo.v1.Message.timestamp:type_name -> google.protobuf.Timestamp
 	6, // 6: echo.v1.Message.duration:type_name -> google.protobuf.Duration
 	3, // 7: echo.v1.EchoService.Echo:input_type -> echo.v1.Message
-	3, // 8: echo.v1.EchoService.Echo:output_type -> echo.v1.Message
-	8, // [8:9] is the sub-list for method output_type
-	7, // [7:8] is the sub-list for method input_type
+	3, // 8: echo.v1.EchoService.EchoStream:input_type -> echo.v1.Message
+	3, // 9: echo.v1.EchoService.Echo:output_type -> echo.v1.Message
+	3, // 10: echo.v1.EchoService.EchoStream:output_type -> echo.v1.Message
+	9, // [9:11] is the sub-list for method output_type
+	7, // [7:9] is the sub-list for method input_type
 	7, // [7:7] is the sub-list for extension type_name
 	7, // [7:7] is the sub-list for extension extendee
 	0, // [0:7] is the sub-list for field type_name
