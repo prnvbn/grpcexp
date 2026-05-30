@@ -5,14 +5,17 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"sort"
 	"strings"
 	"unicode"
 
 	"github.com/fullstorydev/grpcurl"
-	"github.com/jhump/protoreflect/desc" //nolint:staticcheck // SA1019: Deprecated package but required by grpcurl
+	oldproto "github.com/golang/protobuf/proto" //nolint:staticcheck // grpcurl uses the legacy proto API
+	"github.com/jhump/protoreflect/desc"        //nolint:staticcheck // Deprecated package but required by grpcurl
 	"github.com/jhump/protoreflect/grpcreflect"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
@@ -85,6 +88,51 @@ func (c *Client) InvokeRPC(ctx context.Context, methodFullName string, request m
 	}
 
 	return responseBuf.String(), nil
+}
+
+func (c *Client) InvokeStreaming(ctx context.Context, methodFullName string, requests <-chan map[string]any, events chan<- StreamEvent) error {
+	_, formatter, err := grpcurl.RequestParserAndFormatter(grpcurl.FormatJSON, c.source, nil, grpcurl.FormatOptions{})
+	if err != nil {
+		return fmt.Errorf("failed to create response formatter: %w", err)
+	}
+
+	handler := &streamEventHandler{
+		formatter: formatter,
+		events:    events,
+	}
+
+	requestSupplier := func(msg oldproto.Message) error {
+		request, ok := <-requests
+		if !ok {
+			return io.EOF
+		}
+
+		jsonData, err := json.Marshal(request)
+		if err != nil {
+			return fmt.Errorf("failed to marshal request: %w", err)
+		}
+
+		rf, _, err := grpcurl.RequestParserAndFormatter(grpcurl.FormatJSON, c.source, bytes.NewReader(jsonData), grpcurl.FormatOptions{})
+		if err != nil {
+			return fmt.Errorf("failed to create request parser: %w", err)
+		}
+
+		return rf.Next(msg)
+	}
+
+	if err := grpcurl.InvokeRPC(ctx, c.source, c.conn, methodFullName, nil, handler, requestSupplier); err != nil {
+		events <- StreamEvent{Kind: StreamEventError, Err: fmt.Errorf("RPC invocation failed: %w", err)}
+		return err
+	}
+
+	if handler.status != nil && handler.status.Code() != codes.OK {
+		err := fmt.Errorf("RPC error: %s", handler.status.Message())
+		events <- StreamEvent{Kind: StreamEventError, Err: err}
+		return err
+	}
+
+	events <- StreamEvent{Kind: StreamEventClosed}
+	return nil
 }
 
 // GRPCURLCommand returns a shell-safe grpcurl command for the current client session.

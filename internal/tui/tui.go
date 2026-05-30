@@ -6,7 +6,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/prnvbn/grpcexp/internal/grpc"
-	"github.com/prnvbn/grpcexp/internal/tui/form"
+	"github.com/prnvbn/grpcexp/internal/tui/call"
 )
 
 var _ tea.Model = &Model{}
@@ -24,7 +24,7 @@ type Model struct {
 
 	servicesList   ServicesList
 	methodsList    *MethodsList
-	callMethodForm *form.Form
+	callMethodForm call.Screen
 
 	grpcClient *grpc.Client
 	width      int
@@ -90,6 +90,9 @@ func (m *Model) goBack() (tea.Model, tea.Cmd) {
 		m.methodsList = nil
 		return *m, nil
 	case screenCallMethod:
+		if m.callMethodForm != nil {
+			m.callMethodForm.Cancel()
+		}
 		m.state = screenMethods
 		m.callMethodForm = nil
 		return *m, nil
@@ -125,9 +128,9 @@ func (m *Model) drillDown() (tea.Model, tea.Cmd, bool) {
 			return *m, tea.Quit, true
 		}
 
-		methodDetails := form.NewForm(md.method, m.grpcClient)
+		methodDetails := call.NewScreen(md.method, m.grpcClient)
 		methodDetails.SetSize(m.width, m.height)
-		m.callMethodForm = &methodDetails
+		m.callMethodForm = methodDetails
 		m.state = screenCallMethod
 		return *m, m.callMethodForm.Init(), true
 	case screenCallMethod:
