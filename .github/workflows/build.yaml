@@ -21,6 +21,13 @@ jobs:
         run: |
           echo "TAG=$(head -c -1 internal/cli/version.txt)" >> $GITHUB_ENV
 
+      - name: Setup Go
+        uses: actions/setup-go@v4
+        with:
+          go-version-file: "go.mod"
+      - name: build
+        run: make dist
+
       - name: Create Tag
         uses: actions/github-script@v7
         with:
@@ -31,13 +38,6 @@ jobs:
               ref: 'refs/tags/v${{env.TAG}}',
               sha: context.sha
             })
-
-      - name: Setup Go
-        uses: actions/setup-go@v4
-        with:
-          go-version-file: "go.mod"
-      - name: build
-        run: make dist
 
       - name: Create Release
         uses: ncipollo/release-action@v1
