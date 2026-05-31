@@ -116,7 +116,11 @@ func (f *Stream) Cancel() {
 func (f *Stream) handleKey(msg tea.KeyMsg) (tea.Cmd, bool) {
 	switch msg.String() {
 	case "ctrl+y":
-		f.copyGRPCURLCommand()
+		if f.activePane == streamPaneRecv {
+			f.copyTranscript()
+		} else {
+			f.copyGRPCURLCommand()
+		}
 		return nil, true
 	case "shift+tab":
 		f.togglePane()
@@ -173,7 +177,7 @@ func (f *Stream) renderSendPane() string {
 	out.WriteString("\n\n")
 	out.WriteString(labelStyle.Render("status: " + f.status()))
 	out.WriteString("\n")
-	out.WriteString(labelStyle.Render("tab/up/down: navigate • shift+tab: pane • ctrl+d: close send • ctrl+y: copy grpcurl"))
+	out.WriteString(labelStyle.Render("tab/up/down: navigate • shift+tab: switch pane • ctrl+d: close send • ctrl+y: copy grpcurl"))
 
 	return out.String()
 }
@@ -348,6 +352,12 @@ func (f *Stream) copyGRPCURLCommand() {
 		return
 	}
 	if err := clipboard.WriteAll(command); err != nil {
+		fmt.Fprintf(os.Stderr, "error writing to clipboard: %v\n", err)
+	}
+}
+
+func (f *Stream) copyTranscript() {
+	if err := clipboard.WriteAll(strings.Join(f.transcript, "\n")); err != nil {
 		fmt.Fprintf(os.Stderr, "error writing to clipboard: %v\n", err)
 	}
 }
