@@ -1,0 +1,37 @@
+set timeout 20
+
+set bin $env(GRPCEXP_DEMO_BIN)
+set target $env(GRPCEXP_DEMO_TARGET)
+
+spawn -noecho env -u NO_COLOR TERM=xterm-256color COLORTERM=truecolor $bin -a $target
+expect "more"
+
+sleep 1.0
+send "\t\t\t\t\r"
+expect "helloworld.Greeter.SayHello"
+
+sleep 0.9
+send "\r"
+expect "copy grpcurl"
+
+send "P"
+expect "P"
+send "r"
+expect "Pr"
+send "a"
+expect "Pra"
+send "n"
+expect "Pran"
+send "a"
+expect "Prana"
+send "v"
+expect "Pranav"
+
+sleep 0.8
+send "\t"
+
+sleep 0.8
+send "\r"
+expect "Hello Pranav"
+
+sleep 3.0

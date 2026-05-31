@@ -2,8 +2,6 @@
 
 `grpcexp` is an interactive explorer for interacting with grpc servers. It's basically a tui on top of [`grpcurl`](https://github.com/fullstorydev/grpcurl).
 
-![Demo](demo.svg)
-
 ## Installation
 
 ### Linux or MacOS
@@ -35,7 +33,7 @@ go install github.com/prnvbn/grpcexp/cmd/grpcexp@latest
 Windows installation instructions are a WIP. In the meantime, you can download the latest release from the [releases page](https://github.com/prnvbn/grpcexp/releases)
 
 > [!NOTE]
->  
+>
 > To update `grpcexp` to the latest version, simply re-run any of the installation methods above.
 > They always install the most recent release.
 
@@ -48,9 +46,19 @@ To enable autocomplete, add the following to your `.bashrc` or `.bash_profile` f
 source <(grpcexp completion bash)
 ```
 
+## Usage examples
+
+### Unary call
+
+![Unary call demo](demos/unary.gif)
+
+### Streaming call
+
+![Streaming call demo](demos/streaming.gif)
+
 ## Why
 
-Let me preface this by saying, I really like grpcurl but have a few nits:
+Let me preface this by saying, I really like `grpcurl` but have a few UX nits:
 
 <details>
 
