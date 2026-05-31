@@ -1,0 +1,49 @@
+# demo-rows: 24
+
+set timeout 20
+
+proc type_and_expect {text} {
+    set value ""
+    foreach char [split $text ""] {
+        send -- $char
+        append value $char
+        expect $value
+    }
+}
+
+set bin $env(GRPCEXP_DEMO_BIN)
+set target $env(GRPCEXP_DEMO_TARGET)
+
+spawn -noecho env -u NO_COLOR TERM=xterm-256color COLORTERM=truecolor $bin -a $target
+expect "more"
+
+sleep 1.0
+send "\t\t\t\r"
+expect "hello.v1.HelloService.HelloStream"
+
+sleep 0.9
+send "\r"
+expect "No stream events yet."
+
+type_and_expect "Pranav"
+
+sleep 0.8
+send "\t"
+sleep 0.8
+send "\r"
+expect "Hello Pranav"
+
+sleep 0.8
+send "\033\[A"
+expect "> name:"
+send "\x15"
+
+type_and_expect "Manya"
+
+sleep 0.8
+send "\t"
+sleep 0.8
+send "\r"
+expect "Hello Manya"
+
+sleep 3.0
