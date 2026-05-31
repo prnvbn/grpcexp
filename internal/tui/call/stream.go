@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/atotto/clipboard"
 	tea "github.com/charmbracelet/bubbletea"
@@ -36,9 +37,15 @@ type Stream struct {
 	cancel      context.CancelFunc
 	requests    chan map[string]any
 	events      chan grpc.StreamEvent
-	transcript  []string
+	transcript  []transcriptEntry
 	recvCount   int
 	scrollIndex int
+	timestamps  bool
+}
+
+type transcriptEntry struct {
+	at   time.Time
+	text string
 }
 
 type streamEventMsg struct {
@@ -116,7 +123,11 @@ func (f *Stream) Cancel() {
 func (f *Stream) handleKey(msg tea.KeyMsg) (tea.Cmd, bool) {
 	switch msg.String() {
 	case "ctrl+y":
-		f.copyGRPCURLCommand()
+		if f.activePane == streamPaneRecv {
+			f.copyTranscript()
+		} else {
+			f.copyGRPCURLCommand()
+		}
 		return nil, true
 	case "shift+tab":
 		f.togglePane()
@@ -128,6 +139,9 @@ func (f *Stream) handleKey(msg tea.KeyMsg) (tea.Cmd, bool) {
 
 	if f.activePane == streamPaneRecv {
 		switch msg.String() {
+		case "t":
+			f.timestamps = !f.timestamps
+			return nil, true
 		case "up":
 			if f.scrollIndex > 0 {
 				f.scrollIndex--
@@ -173,7 +187,7 @@ func (f *Stream) renderSendPane() string {
 	out.WriteString("\n\n")
 	out.WriteString(labelStyle.Render("status: " + f.status()))
 	out.WriteString("\n")
-	out.WriteString(labelStyle.Render("tab/up/down: navigate • shift+tab: pane • ctrl+d: close send • ctrl+y: copy grpcurl"))
+	out.WriteString(labelStyle.Render("tab/up/down: navigate • shift+tab: switch pane • ctrl+d: close send • ctrl+y: copy grpcurl"))
 
 	return out.String()
 }
@@ -193,12 +207,11 @@ func (f *Stream) renderReceivePane() string {
 		out.WriteString(labelStyle.Render("No stream events yet."))
 		out.WriteString("\n")
 	} else {
-		out.WriteString(strings.Join(lines, "\n"))
+		out.WriteString(strings.Join(f.transcriptLines(lines), "\n"))
 		out.WriteString("\n")
 	}
-
 	out.WriteString("\n")
-	out.WriteString(labelStyle.Render("shift+tab: pane • up/down: scroll • esc: back"))
+	out.WriteString(labelStyle.Render("t: toggle timestamps • ctrl+y: copy transcript"))
 
 	return out.String()
 }
@@ -214,7 +227,7 @@ func (f *Stream) sendMessage() tea.Cmd {
 	}
 
 	f.requests <- f.builder.Value()
-	f.transcript = append(f.transcript, "> sent")
+	f.appendTranscript("> sent")
 	f.scrollToBottom()
 
 	if !f.method.IsStreamingClient() {
@@ -257,7 +270,7 @@ func (f *Stream) handleStreamEvent(event grpc.StreamEvent) tea.Cmd {
 	switch event.Kind {
 	case grpc.StreamEventResponse:
 		f.recvCount++
-		f.transcript = append(f.transcript, fmt.Sprintf("< recv #%d\n%s", f.recvCount, strings.TrimRight(event.Message, "\n")))
+		f.appendTranscript(fmt.Sprintf("< recv #%d\n%s", f.recvCount, strings.TrimRight(event.Message, "\n")))
 		f.scrollToBottom()
 		return f.waitForStreamEvent()
 	case grpc.StreamEventError:
@@ -265,13 +278,13 @@ func (f *Stream) handleStreamEvent(event grpc.StreamEvent) tea.Cmd {
 		if event.Err != nil {
 			msg = event.Err.Error()
 		}
-		f.transcript = append(f.transcript, "! error: "+msg)
+		f.appendTranscript("! error: " + msg)
 		f.closed = true
 		f.sendClosed = true
 		f.scrollToBottom()
 		return nil
 	case grpc.StreamEventClosed:
-		f.transcript = append(f.transcript, "x closed")
+		f.appendTranscript("x closed")
 		f.closed = true
 		f.sendClosed = true
 		f.scrollToBottom()
@@ -312,7 +325,14 @@ func (f *Stream) status() string {
 	}
 }
 
-func (f *Stream) visibleTranscript() []string {
+func (f *Stream) appendTranscript(text string) {
+	f.transcript = append(f.transcript, transcriptEntry{
+		at:   time.Now(),
+		text: text,
+	})
+}
+
+func (f *Stream) visibleTranscript() []transcriptEntry {
 	if f.height <= 0 || len(f.transcript) == 0 {
 		return f.transcript
 	}
@@ -327,6 +347,18 @@ func (f *Stream) visibleTranscript() []string {
 
 	start := min(f.scrollIndex, len(f.transcript)-maxLines)
 	return f.transcript[start : start+maxLines]
+}
+
+func (f *Stream) transcriptLines(entries []transcriptEntry) []string {
+	lines := make([]string, 0, len(entries))
+	for _, entry := range entries {
+		if f.timestamps {
+			lines = append(lines, entry.at.Format("15:04:05.000000000")+" "+entry.text)
+			continue
+		}
+		lines = append(lines, entry.text)
+	}
+	return lines
 }
 
 func (f *Stream) maxScroll() int {
@@ -351,6 +383,12 @@ func (f *Stream) copyGRPCURLCommand() {
 		return
 	}
 	if err := clipboard.WriteAll(command); err != nil {
+		fmt.Fprintf(os.Stderr, "error writing to clipboard: %v\n", err)
+	}
+}
+
+func (f *Stream) copyTranscript() {
+	if err := clipboard.WriteAll(strings.Join(f.transcriptLines(f.transcript), "\n")); err != nil {
 		fmt.Fprintf(os.Stderr, "error writing to clipboard: %v\n", err)
 	}
 }

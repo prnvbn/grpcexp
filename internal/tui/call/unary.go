@@ -174,8 +174,3 @@ func (f *Unary) copyGRPCURLCommand() {
 		fmt.Fprintf(os.Stderr, "error writing to clipboard: %v\n", err)
 	}
 }
-
-func callHeader(method protoreflect.MethodDescriptor) string {
-	header := fmt.Sprintf("%s(%s) -> %s", method.FullName(), method.Input().FullName(), method.Output().FullName())
-	return headerStyle.Render(header)
-}
