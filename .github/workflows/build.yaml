@@ -46,3 +46,4 @@ jobs:
           name: Release ${{ env.TAG }}
           artifacts: "dist/*"
           prerelease: true
+          generateReleaseNotes: true
