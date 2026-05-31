@@ -197,9 +197,6 @@ func (f *Stream) renderReceivePane() string {
 		out.WriteString("\n")
 	}
 
-	out.WriteString("\n")
-	out.WriteString(labelStyle.Render("shift+tab: pane • up/down: scroll • esc: back"))
-
 	return out.String()
 }
 
