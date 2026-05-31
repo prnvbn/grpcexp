@@ -180,12 +180,16 @@ func validateTimestamp(s string) error {
 }
 
 func NewFieldFromProto(field protoreflect.FieldDescriptor) *Field {
+	return newFieldFromProto(field, "")
+}
+
+func newFieldFromProto(field protoreflect.FieldDescriptor, inputRole string) *Field {
 	name := string(field.Name())
 	kind := field.Kind()
 
 	switch kind {
 	case protoreflect.StringKind:
-		return NewTextField(name, fmt.Sprintf("Enter %s...", name), 0, nil)
+		return NewTextField(name, textFieldPlaceholder(field, inputRole), 0, nil)
 
 	case protoreflect.BoolKind:
 		return NewBoolField(name)
@@ -193,35 +197,74 @@ func NewFieldFromProto(field protoreflect.FieldDescriptor) *Field {
 	case protoreflect.Int32Kind, protoreflect.Int64Kind,
 		protoreflect.Sint32Kind, protoreflect.Sint64Kind,
 		protoreflect.Sfixed32Kind, protoreflect.Sfixed64Kind:
-		return NewTextField(name, fmt.Sprintf("Enter %s...", kind.String()), 64, validateInt)
+		return NewTextField(name, textFieldPlaceholder(field, inputRole), 64, validateInt)
 
 	case protoreflect.Uint32Kind, protoreflect.Uint64Kind,
 		protoreflect.Fixed32Kind, protoreflect.Fixed64Kind:
-		return NewTextField(name, fmt.Sprintf("Enter %s...", kind.String()), 64, validateUint)
+		return NewTextField(name, textFieldPlaceholder(field, inputRole), 64, validateUint)
 
 	case protoreflect.FloatKind, protoreflect.DoubleKind:
-		return NewTextField(name, fmt.Sprintf("Enter %s...", kind.String()), 64, validateFloat)
+		return NewTextField(name, textFieldPlaceholder(field, inputRole), 64, validateFloat)
 
 	case protoreflect.EnumKind:
 		return NewEnumField(name, field)
 
 	case protoreflect.BytesKind:
-		return NewTextField(name, "Enter hex bytes (e.g., deadbeef)...", 512, nil)
+		return NewTextField(name, textFieldPlaceholder(field, inputRole), 512, nil)
 	case protoreflect.MessageKind:
 		msgDesc := field.Message()
 
 		// support for well-known types
 		switch msgDesc.FullName() {
 		case "google.protobuf.Timestamp":
-			return NewTextField(name, "Enter RFC 3339 timestamp (e.g., 2017-01-15T01:30:15.01Z)...", 64, validateTimestamp)
+			return NewTextField(name, textFieldPlaceholder(field, inputRole), 64, validateTimestamp)
 		case "google.protobuf.Duration":
-			return NewTextField(name, "Enter duration (e.g., 10s)...", 64, validateDuration)
+			return NewTextField(name, textFieldPlaceholder(field, inputRole), 64, validateDuration)
 		default:
 			return NewFieldGroup(name, field)
 		}
 	default:
 		return nil
 	}
+}
+
+func textFieldPlaceholder(field protoreflect.FieldDescriptor, inputRole string) string {
+	switch field.Kind() {
+	case protoreflect.StringKind:
+		if inputRole != "" {
+			return fmt.Sprintf("Enter string %s...", inputRole)
+		}
+		return fmt.Sprintf("Enter %s...", field.Name())
+	case protoreflect.Int32Kind, protoreflect.Int64Kind,
+		protoreflect.Sint32Kind, protoreflect.Sint64Kind,
+		protoreflect.Sfixed32Kind, protoreflect.Sfixed64Kind,
+		protoreflect.Uint32Kind, protoreflect.Uint64Kind,
+		protoreflect.Fixed32Kind, protoreflect.Fixed64Kind,
+		protoreflect.FloatKind, protoreflect.DoubleKind:
+		if inputRole != "" {
+			return fmt.Sprintf("Enter %s %s...", field.Kind(), inputRole)
+		}
+		return fmt.Sprintf("Enter %s...", field.Kind())
+	case protoreflect.BytesKind:
+		if inputRole != "" {
+			return fmt.Sprintf("Enter hex bytes %s (e.g., deadbeef)...", inputRole)
+		}
+		return "Enter hex bytes (e.g., deadbeef)..."
+	case protoreflect.MessageKind:
+		switch field.Message().FullName() {
+		case "google.protobuf.Timestamp":
+			if inputRole != "" {
+				return fmt.Sprintf("Enter timestamp %s (RFC 3339, e.g., 2017-01-15T01:30:15.01Z)...", inputRole)
+			}
+			return "Enter RFC 3339 timestamp (e.g., 2017-01-15T01:30:15.01Z)..."
+		case "google.protobuf.Duration":
+			if inputRole != "" {
+				return fmt.Sprintf("Enter duration %s (e.g., 10s)...", inputRole)
+			}
+			return "Enter duration (e.g., 10s)..."
+		}
+	}
+	return fmt.Sprintf("Enter %s...", field.Name())
 }
 
 func (f *Field) Value() any {

@@ -45,9 +45,9 @@ func newMapField(name string, field protoreflect.FieldDescriptor) *fieldMap {
 	}
 }
 
-func (m *fieldMap) createEntryFields(index int) *mapEntry {
-	keyField := NewFieldFromProto(m.keyDesc)
-	valueField := NewFieldFromProto(m.valueDesc)
+func (m *fieldMap) createEntryFields() *mapEntry {
+	keyField := newFieldFromProto(m.keyDesc, "key")
+	valueField := newFieldFromProto(m.valueDesc, "value")
 
 	if keyField == nil || valueField == nil {
 		return nil
@@ -68,7 +68,7 @@ func (m *fieldMap) createEntryFields(index int) *mapEntry {
 }
 
 func (m *fieldMap) AddEntry() {
-	entry := m.createEntryFields(len(m.entries))
+	entry := m.createEntryFields()
 	if entry != nil {
 		m.entries = append(m.entries, *entry)
 	}
