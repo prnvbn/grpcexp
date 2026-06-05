@@ -2,6 +2,7 @@ package call
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 	"strings"
@@ -41,6 +42,7 @@ type Stream struct {
 	recvCount   int
 	scrollIndex int
 	timestamps  bool
+	generation  int
 }
 
 type transcriptEntry struct {
@@ -49,10 +51,13 @@ type transcriptEntry struct {
 }
 
 type streamEventMsg struct {
-	event grpc.StreamEvent
+	generation int
+	event      grpc.StreamEvent
 }
 
-type streamDoneMsg struct{}
+type streamDoneMsg struct {
+	generation int
+}
 
 func NewStream(method protoreflect.MethodDescriptor, client *grpc.Client) *Stream {
 	return &Stream{
@@ -69,8 +74,14 @@ func (f *Stream) Init() tea.Cmd {
 func (f *Stream) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case streamEventMsg:
+		if msg.generation != f.generation {
+			return f, nil
+		}
 		return f, f.handleStreamEvent(msg.event)
 	case streamDoneMsg:
+		if msg.generation != f.generation {
+			return f, nil
+		}
 		return f, nil
 	case tea.KeyMsg:
 		cmd, handled := f.handleKey(msg)
@@ -139,6 +150,11 @@ func (f *Stream) handleKey(msg tea.KeyMsg) (tea.Cmd, bool) {
 
 	if f.activePane == streamPaneRecv {
 		switch msg.String() {
+		case "r":
+			if f.canReset() {
+				f.reset()
+			}
+			return nil, true
 		case "t":
 			f.timestamps = !f.timestamps
 			return nil, true
@@ -211,7 +227,7 @@ func (f *Stream) renderReceivePane() string {
 		out.WriteString("\n")
 	}
 	out.WriteString("\n")
-	out.WriteString(labelStyle.Render("t: toggle timestamps • ctrl+y: copy transcript"))
+	out.WriteString(labelStyle.Render(f.receiveHelp()))
 
 	return out.String()
 }
@@ -226,8 +242,9 @@ func (f *Stream) sendMessage() tea.Cmd {
 		cmds = append(cmds, f.startStream())
 	}
 
-	f.requests <- f.builder.Value()
-	f.appendTranscript("> sent")
+	request := f.builder.Value()
+	f.requests <- request
+	f.appendTranscript("> sent " + payloadPreview(request))
 	f.scrollToBottom()
 
 	if !f.method.IsStreamingClient() {
@@ -243,26 +260,28 @@ func (f *Stream) startStream() tea.Cmd {
 	f.requests = make(chan map[string]any, 16)
 	f.events = make(chan grpc.StreamEvent, 128)
 	f.started = true
+	f.generation++
 
 	client := f.client
 	methodFullName := string(f.method.FullName())
 	requests := f.requests
 	events := f.events
+	generation := f.generation
 
 	return tea.Batch(func() tea.Msg {
 		_ = client.InvokeStreaming(ctx, methodFullName, requests, events)
-		return streamDoneMsg{}
-	}, f.waitForStreamEvent())
+		return streamDoneMsg{generation: generation}
+	}, f.waitForStreamEvent(generation))
 }
 
-func (f *Stream) waitForStreamEvent() tea.Cmd {
+func (f *Stream) waitForStreamEvent(generation int) tea.Cmd {
 	events := f.events
 	return func() tea.Msg {
 		event, ok := <-events
 		if !ok {
-			return streamDoneMsg{}
+			return streamDoneMsg{generation: generation}
 		}
-		return streamEventMsg{event: event}
+		return streamEventMsg{generation: generation, event: event}
 	}
 }
 
@@ -272,7 +291,7 @@ func (f *Stream) handleStreamEvent(event grpc.StreamEvent) tea.Cmd {
 		f.recvCount++
 		f.appendTranscript(fmt.Sprintf("< recv #%d\n%s", f.recvCount, strings.TrimRight(event.Message, "\n")))
 		f.scrollToBottom()
-		return f.waitForStreamEvent()
+		return f.waitForStreamEvent(f.generation)
 	case grpc.StreamEventError:
 		msg := "unknown error"
 		if event.Err != nil {
@@ -302,6 +321,26 @@ func (f *Stream) closeSend() {
 	f.sendClosed = true
 }
 
+func (f *Stream) canReset() bool {
+	return f.started && (f.closed || f.sendClosed)
+}
+
+func (f *Stream) reset() {
+	if f.cancel != nil {
+		f.cancel()
+	}
+	f.started = false
+	f.sendClosed = false
+	f.closed = false
+	f.cancel = nil
+	f.requests = nil
+	f.events = nil
+	f.recvCount = 0
+	f.generation++
+	f.appendTranscript("x reset")
+	f.scrollToBottom()
+}
+
 func (f *Stream) togglePane() {
 	if f.activePane == streamPaneSend {
 		f.builder.Deactivate()
@@ -323,6 +362,14 @@ func (f *Stream) status() string {
 	default:
 		return "idle"
 	}
+}
+
+func (f *Stream) receiveHelp() string {
+	parts := []string{"t: toggle timestamps", "ctrl+y: copy transcript"}
+	if f.canReset() {
+		parts = append(parts, "r: reset")
+	}
+	return strings.Join(parts, " • ")
 }
 
 func (f *Stream) appendTranscript(text string) {
@@ -391,4 +438,19 @@ func (f *Stream) copyTranscript() {
 	if err := clipboard.WriteAll(strings.Join(f.transcriptLines(f.transcript), "\n")); err != nil {
 		fmt.Fprintf(os.Stderr, "error writing to clipboard: %v\n", err)
 	}
+}
+
+func payloadPreview(payload map[string]any) string {
+	const maxPayloadPreviewLen = 120
+
+	data, err := json.Marshal(payload)
+	if err != nil {
+		return "<failed to marshal request>"
+	}
+
+	preview := string(data)
+	if len(preview) <= maxPayloadPreviewLen {
+		return preview
+	}
+	return preview[:maxPayloadPreviewLen-3] + "..."
 }
