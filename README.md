@@ -2,6 +2,16 @@
 
 `grpcexp` is an interactive explorer for interacting with grpc servers. It's basically a tui on top of [`grpcurl`](https://github.com/fullstorydev/grpcurl).
 
+## Usage examples
+
+### Unary call
+
+![Unary call demo](demos/unary.gif)
+
+### Streaming call
+
+![Streaming call demo](demos/streaming.gif)
+
 ## Installation
 
 ### Linux or MacOS
@@ -45,16 +55,6 @@ To enable autocomplete, add the following to your `.bashrc` or `.bash_profile` f
 # you can also generate completions for zsh and fish shells by replacing bash with zsh or fish
 source <(grpcexp completion bash)
 ```
-
-## Usage examples
-
-### Unary call
-
-![Unary call demo](demos/unary.gif)
-
-### Streaming call
-
-![Streaming call demo](demos/streaming.gif)
 
 ## Why
 
