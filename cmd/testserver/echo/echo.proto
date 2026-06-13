@@ -2,20 +2,20 @@ syntax = "proto3";
 
 package echo.v1;
 
-import "google/protobuf/timestamp.proto";
 import "google/protobuf/duration.proto";
+import "google/protobuf/timestamp.proto";
 
-message EvenMoreNestedMessage {
+message AnotherMessage {
   string message = 1;
   bool boolean = 2;
 }
 
-message NestedMessage {
+message OtherMessage {
   string message = 1;
   bool boolean = 2;
   int32 int32_value = 3;
-  EvenMoreNestedMessage even_more_nested_message = 4;
-  EvenMoreNestedMessage even_more_nested_message_2 = 5;
+  AnotherMessage another_message = 4;
+  AnotherMessage another_message_2 = 5;
 }
 
 message Message {
@@ -36,7 +36,7 @@ message Message {
   double double_value = 7;
 
   repeated string strings = 8;
-  NestedMessage nested_message = 9;
+  OtherMessage other_message = 9;
 
   map<string, string> map_value = 10;
 
@@ -50,6 +50,12 @@ message Message {
 
   google.protobuf.Timestamp timestamp = 16;
   google.protobuf.Duration duration = 17;
+
+  message NestedMessage {
+    string hello = 1;
+  }
+
+  NestedMessage nested_message = 18;
 }
 
 service EchoService {

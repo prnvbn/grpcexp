@@ -72,7 +72,7 @@ func (Message_Enum) EnumDescriptor() ([]byte, []int) {
 	return file_cmd_testserver_echo_echo_proto_rawDescGZIP(), []int{2, 0}
 }
 
-type EvenMoreNestedMessage struct {
+type AnotherMessage struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Message       string                 `protobuf:"bytes,1,opt,name=message,proto3" json:"message,omitempty"`
 	Boolean       bool                   `protobuf:"varint,2,opt,name=boolean,proto3" json:"boolean,omitempty"`
@@ -80,20 +80,20 @@ type EvenMoreNestedMessage struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *EvenMoreNestedMessage) Reset() {
-	*x = EvenMoreNestedMessage{}
+func (x *AnotherMessage) Reset() {
+	*x = AnotherMessage{}
 	mi := &file_cmd_testserver_echo_echo_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *EvenMoreNestedMessage) String() string {
+func (x *AnotherMessage) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*EvenMoreNestedMessage) ProtoMessage() {}
+func (*AnotherMessage) ProtoMessage() {}
 
-func (x *EvenMoreNestedMessage) ProtoReflect() protoreflect.Message {
+func (x *AnotherMessage) ProtoReflect() protoreflect.Message {
 	mi := &file_cmd_testserver_echo_echo_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -105,50 +105,50 @@ func (x *EvenMoreNestedMessage) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use EvenMoreNestedMessage.ProtoReflect.Descriptor instead.
-func (*EvenMoreNestedMessage) Descriptor() ([]byte, []int) {
+// Deprecated: Use AnotherMessage.ProtoReflect.Descriptor instead.
+func (*AnotherMessage) Descriptor() ([]byte, []int) {
 	return file_cmd_testserver_echo_echo_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *EvenMoreNestedMessage) GetMessage() string {
+func (x *AnotherMessage) GetMessage() string {
 	if x != nil {
 		return x.Message
 	}
 	return ""
 }
 
-func (x *EvenMoreNestedMessage) GetBoolean() bool {
+func (x *AnotherMessage) GetBoolean() bool {
 	if x != nil {
 		return x.Boolean
 	}
 	return false
 }
 
-type NestedMessage struct {
-	state                   protoimpl.MessageState `protogen:"open.v1"`
-	Message                 string                 `protobuf:"bytes,1,opt,name=message,proto3" json:"message,omitempty"`
-	Boolean                 bool                   `protobuf:"varint,2,opt,name=boolean,proto3" json:"boolean,omitempty"`
-	Int32Value              int32                  `protobuf:"varint,3,opt,name=int32_value,json=int32Value,proto3" json:"int32_value,omitempty"`
-	EvenMoreNestedMessage   *EvenMoreNestedMessage `protobuf:"bytes,4,opt,name=even_more_nested_message,json=evenMoreNestedMessage,proto3" json:"even_more_nested_message,omitempty"`
-	EvenMoreNestedMessage_2 *EvenMoreNestedMessage `protobuf:"bytes,5,opt,name=even_more_nested_message_2,json=evenMoreNestedMessage2,proto3" json:"even_more_nested_message_2,omitempty"`
-	unknownFields           protoimpl.UnknownFields
-	sizeCache               protoimpl.SizeCache
+type OtherMessage struct {
+	state            protoimpl.MessageState `protogen:"open.v1"`
+	Message          string                 `protobuf:"bytes,1,opt,name=message,proto3" json:"message,omitempty"`
+	Boolean          bool                   `protobuf:"varint,2,opt,name=boolean,proto3" json:"boolean,omitempty"`
+	Int32Value       int32                  `protobuf:"varint,3,opt,name=int32_value,json=int32Value,proto3" json:"int32_value,omitempty"`
+	AnotherMessage   *AnotherMessage        `protobuf:"bytes,4,opt,name=another_message,json=anotherMessage,proto3" json:"another_message,omitempty"`
+	AnotherMessage_2 *AnotherMessage        `protobuf:"bytes,5,opt,name=another_message_2,json=anotherMessage2,proto3" json:"another_message_2,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
-func (x *NestedMessage) Reset() {
-	*x = NestedMessage{}
+func (x *OtherMessage) Reset() {
+	*x = OtherMessage{}
 	mi := &file_cmd_testserver_echo_echo_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *NestedMessage) String() string {
+func (x *OtherMessage) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*NestedMessage) ProtoMessage() {}
+func (*OtherMessage) ProtoMessage() {}
 
-func (x *NestedMessage) ProtoReflect() protoreflect.Message {
+func (x *OtherMessage) ProtoReflect() protoreflect.Message {
 	mi := &file_cmd_testserver_echo_echo_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -160,58 +160,58 @@ func (x *NestedMessage) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use NestedMessage.ProtoReflect.Descriptor instead.
-func (*NestedMessage) Descriptor() ([]byte, []int) {
+// Deprecated: Use OtherMessage.ProtoReflect.Descriptor instead.
+func (*OtherMessage) Descriptor() ([]byte, []int) {
 	return file_cmd_testserver_echo_echo_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *NestedMessage) GetMessage() string {
+func (x *OtherMessage) GetMessage() string {
 	if x != nil {
 		return x.Message
 	}
 	return ""
 }
 
-func (x *NestedMessage) GetBoolean() bool {
+func (x *OtherMessage) GetBoolean() bool {
 	if x != nil {
 		return x.Boolean
 	}
 	return false
 }
 
-func (x *NestedMessage) GetInt32Value() int32 {
+func (x *OtherMessage) GetInt32Value() int32 {
 	if x != nil {
 		return x.Int32Value
 	}
 	return 0
 }
 
-func (x *NestedMessage) GetEvenMoreNestedMessage() *EvenMoreNestedMessage {
+func (x *OtherMessage) GetAnotherMessage() *AnotherMessage {
 	if x != nil {
-		return x.EvenMoreNestedMessage
+		return x.AnotherMessage
 	}
 	return nil
 }
 
-func (x *NestedMessage) GetEvenMoreNestedMessage_2() *EvenMoreNestedMessage {
+func (x *OtherMessage) GetAnotherMessage_2() *AnotherMessage {
 	if x != nil {
-		return x.EvenMoreNestedMessage_2
+		return x.AnotherMessage_2
 	}
 	return nil
 }
 
 type Message struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Message       string                 `protobuf:"bytes,1,opt,name=message,proto3" json:"message,omitempty"`
-	Boolean       bool                   `protobuf:"varint,2,opt,name=boolean,proto3" json:"boolean,omitempty"`
-	Enum          Message_Enum           `protobuf:"varint,3,opt,name=enum,proto3,enum=echo.v1.Message_Enum" json:"enum,omitempty"`
-	Int32Value    int32                  `protobuf:"varint,4,opt,name=int32_value,json=int32Value,proto3" json:"int32_value,omitempty"`
-	Int64Value    int64                  `protobuf:"varint,5,opt,name=int64_value,json=int64Value,proto3" json:"int64_value,omitempty"`
-	FloatValue    float32                `protobuf:"fixed32,6,opt,name=float_value,json=floatValue,proto3" json:"float_value,omitempty"`
-	DoubleValue   float64                `protobuf:"fixed64,7,opt,name=double_value,json=doubleValue,proto3" json:"double_value,omitempty"`
-	Strings       []string               `protobuf:"bytes,8,rep,name=strings,proto3" json:"strings,omitempty"`
-	NestedMessage *NestedMessage         `protobuf:"bytes,9,opt,name=nested_message,json=nestedMessage,proto3" json:"nested_message,omitempty"`
-	MapValue      map[string]string      `protobuf:"bytes,10,rep,name=map_value,json=mapValue,proto3" json:"map_value,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	state        protoimpl.MessageState `protogen:"open.v1"`
+	Message      string                 `protobuf:"bytes,1,opt,name=message,proto3" json:"message,omitempty"`
+	Boolean      bool                   `protobuf:"varint,2,opt,name=boolean,proto3" json:"boolean,omitempty"`
+	Enum         Message_Enum           `protobuf:"varint,3,opt,name=enum,proto3,enum=echo.v1.Message_Enum" json:"enum,omitempty"`
+	Int32Value   int32                  `protobuf:"varint,4,opt,name=int32_value,json=int32Value,proto3" json:"int32_value,omitempty"`
+	Int64Value   int64                  `protobuf:"varint,5,opt,name=int64_value,json=int64Value,proto3" json:"int64_value,omitempty"`
+	FloatValue   float32                `protobuf:"fixed32,6,opt,name=float_value,json=floatValue,proto3" json:"float_value,omitempty"`
+	DoubleValue  float64                `protobuf:"fixed64,7,opt,name=double_value,json=doubleValue,proto3" json:"double_value,omitempty"`
+	Strings      []string               `protobuf:"bytes,8,rep,name=strings,proto3" json:"strings,omitempty"`
+	OtherMessage *OtherMessage          `protobuf:"bytes,9,opt,name=other_message,json=otherMessage,proto3" json:"other_message,omitempty"`
+	MapValue     map[string]string      `protobuf:"bytes,10,rep,name=map_value,json=mapValue,proto3" json:"map_value,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	// Types that are valid to be assigned to OneofValue:
 	//
 	//	*Message_OneofStringValue
@@ -222,6 +222,7 @@ type Message struct {
 	OneofValue    isMessage_OneofValue   `protobuf_oneof:"oneof_value"`
 	Timestamp     *timestamppb.Timestamp `protobuf:"bytes,16,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
 	Duration      *durationpb.Duration   `protobuf:"bytes,17,opt,name=duration,proto3" json:"duration,omitempty"`
+	NestedMessage *Message_NestedMessage `protobuf:"bytes,18,opt,name=nested_message,json=nestedMessage,proto3" json:"nested_message,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -312,9 +313,9 @@ func (x *Message) GetStrings() []string {
 	return nil
 }
 
-func (x *Message) GetNestedMessage() *NestedMessage {
+func (x *Message) GetOtherMessage() *OtherMessage {
 	if x != nil {
-		return x.NestedMessage
+		return x.OtherMessage
 	}
 	return nil
 }
@@ -392,6 +393,13 @@ func (x *Message) GetDuration() *durationpb.Duration {
 	return nil
 }
 
+func (x *Message) GetNestedMessage() *Message_NestedMessage {
+	if x != nil {
+		return x.NestedMessage
+	}
+	return nil
+}
+
 type isMessage_OneofValue interface {
 	isMessage_OneofValue()
 }
@@ -426,21 +434,65 @@ func (*Message_OneofFloatValue) isMessage_OneofValue() {}
 
 func (*Message_OneofDoubleValue) isMessage_OneofValue() {}
 
+type Message_NestedMessage struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Hello         string                 `protobuf:"bytes,1,opt,name=hello,proto3" json:"hello,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Message_NestedMessage) Reset() {
+	*x = Message_NestedMessage{}
+	mi := &file_cmd_testserver_echo_echo_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Message_NestedMessage) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Message_NestedMessage) ProtoMessage() {}
+
+func (x *Message_NestedMessage) ProtoReflect() protoreflect.Message {
+	mi := &file_cmd_testserver_echo_echo_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Message_NestedMessage.ProtoReflect.Descriptor instead.
+func (*Message_NestedMessage) Descriptor() ([]byte, []int) {
+	return file_cmd_testserver_echo_echo_proto_rawDescGZIP(), []int{2, 1}
+}
+
+func (x *Message_NestedMessage) GetHello() string {
+	if x != nil {
+		return x.Hello
+	}
+	return ""
+}
+
 var File_cmd_testserver_echo_echo_proto protoreflect.FileDescriptor
 
 const file_cmd_testserver_echo_echo_proto_rawDesc = "" +
 	"\n" +
-	"\x1ecmd/testserver/echo/echo.proto\x12\aecho.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1egoogle/protobuf/duration.proto\"K\n" +
-	"\x15EvenMoreNestedMessage\x12\x18\n" +
+	"\x1ecmd/testserver/echo/echo.proto\x12\aecho.v1\x1a\x1egoogle/protobuf/duration.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"D\n" +
+	"\x0eAnotherMessage\x12\x18\n" +
 	"\amessage\x18\x01 \x01(\tR\amessage\x12\x18\n" +
-	"\aboolean\x18\x02 \x01(\bR\aboolean\"\x99\x02\n" +
-	"\rNestedMessage\x12\x18\n" +
+	"\aboolean\x18\x02 \x01(\bR\aboolean\"\xea\x01\n" +
+	"\fOtherMessage\x12\x18\n" +
 	"\amessage\x18\x01 \x01(\tR\amessage\x12\x18\n" +
 	"\aboolean\x18\x02 \x01(\bR\aboolean\x12\x1f\n" +
 	"\vint32_value\x18\x03 \x01(\x05R\n" +
-	"int32Value\x12W\n" +
-	"\x18even_more_nested_message\x18\x04 \x01(\v2\x1e.echo.v1.EvenMoreNestedMessageR\x15evenMoreNestedMessage\x12Z\n" +
-	"\x1aeven_more_nested_message_2\x18\x05 \x01(\v2\x1e.echo.v1.EvenMoreNestedMessageR\x16evenMoreNestedMessage2\"\xed\x06\n" +
+	"int32Value\x12@\n" +
+	"\x0fanother_message\x18\x04 \x01(\v2\x17.echo.v1.AnotherMessageR\x0eanotherMessage\x12C\n" +
+	"\x11another_message_2\x18\x05 \x01(\v2\x17.echo.v1.AnotherMessageR\x0fanotherMessage2\"\xd8\a\n" +
 	"\aMessage\x12\x18\n" +
 	"\amessage\x18\x01 \x01(\tR\amessage\x12\x18\n" +
 	"\aboolean\x18\x02 \x01(\bR\aboolean\x12)\n" +
@@ -452,8 +504,8 @@ const file_cmd_testserver_echo_echo_proto_rawDesc = "" +
 	"\vfloat_value\x18\x06 \x01(\x02R\n" +
 	"floatValue\x12!\n" +
 	"\fdouble_value\x18\a \x01(\x01R\vdoubleValue\x12\x18\n" +
-	"\astrings\x18\b \x03(\tR\astrings\x12=\n" +
-	"\x0enested_message\x18\t \x01(\v2\x16.echo.v1.NestedMessageR\rnestedMessage\x12;\n" +
+	"\astrings\x18\b \x03(\tR\astrings\x12:\n" +
+	"\rother_message\x18\t \x01(\v2\x15.echo.v1.OtherMessageR\fotherMessage\x12;\n" +
 	"\tmap_value\x18\n" +
 	" \x03(\v2\x1e.echo.v1.Message.MapValueEntryR\bmapValue\x12.\n" +
 	"\x12oneof_string_value\x18\v \x01(\tH\x00R\x10oneofStringValue\x12,\n" +
@@ -462,10 +514,13 @@ const file_cmd_testserver_echo_echo_proto_rawDesc = "" +
 	"\x11oneof_float_value\x18\x0e \x01(\x02H\x00R\x0foneofFloatValue\x12.\n" +
 	"\x12oneof_double_value\x18\x0f \x01(\x01H\x00R\x10oneofDoubleValue\x128\n" +
 	"\ttimestamp\x18\x10 \x01(\v2\x1a.google.protobuf.TimestampR\ttimestamp\x125\n" +
-	"\bduration\x18\x11 \x01(\v2\x19.google.protobuf.DurationR\bduration\x1a;\n" +
+	"\bduration\x18\x11 \x01(\v2\x19.google.protobuf.DurationR\bduration\x12E\n" +
+	"\x0enested_message\x18\x12 \x01(\v2\x1e.echo.v1.Message.NestedMessageR\rnestedMessage\x1a;\n" +
 	"\rMapValueEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"@\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\x1a%\n" +
+	"\rNestedMessage\x12\x14\n" +
+	"\x05hello\x18\x01 \x01(\tR\x05hello\"@\n" +
 	"\x04Enum\x12\x14\n" +
 	"\x10ENUM_UNSPECIFIED\x10\x00\x12\x10\n" +
 	"\fENUM_VALUE_1\x10\x01\x12\x10\n" +
@@ -490,33 +545,35 @@ func file_cmd_testserver_echo_echo_proto_rawDescGZIP() []byte {
 }
 
 var file_cmd_testserver_echo_echo_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_cmd_testserver_echo_echo_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_cmd_testserver_echo_echo_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_cmd_testserver_echo_echo_proto_goTypes = []any{
 	(Message_Enum)(0),             // 0: echo.v1.Message.Enum
-	(*EvenMoreNestedMessage)(nil), // 1: echo.v1.EvenMoreNestedMessage
-	(*NestedMessage)(nil),         // 2: echo.v1.NestedMessage
+	(*AnotherMessage)(nil),        // 1: echo.v1.AnotherMessage
+	(*OtherMessage)(nil),          // 2: echo.v1.OtherMessage
 	(*Message)(nil),               // 3: echo.v1.Message
 	nil,                           // 4: echo.v1.Message.MapValueEntry
-	(*timestamppb.Timestamp)(nil), // 5: google.protobuf.Timestamp
-	(*durationpb.Duration)(nil),   // 6: google.protobuf.Duration
+	(*Message_NestedMessage)(nil), // 5: echo.v1.Message.NestedMessage
+	(*timestamppb.Timestamp)(nil), // 6: google.protobuf.Timestamp
+	(*durationpb.Duration)(nil),   // 7: google.protobuf.Duration
 }
 var file_cmd_testserver_echo_echo_proto_depIdxs = []int32{
-	1, // 0: echo.v1.NestedMessage.even_more_nested_message:type_name -> echo.v1.EvenMoreNestedMessage
-	1, // 1: echo.v1.NestedMessage.even_more_nested_message_2:type_name -> echo.v1.EvenMoreNestedMessage
-	0, // 2: echo.v1.Message.enum:type_name -> echo.v1.Message.Enum
-	2, // 3: echo.v1.Message.nested_message:type_name -> echo.v1.NestedMessage
-	4, // 4: echo.v1.Message.map_value:type_name -> echo.v1.Message.MapValueEntry
-	5, // 5: echo.v1.Message.timestamp:type_name -> google.protobuf.Timestamp
-	6, // 6: echo.v1.Message.duration:type_name -> google.protobuf.Duration
-	3, // 7: echo.v1.EchoService.Echo:input_type -> echo.v1.Message
-	3, // 8: echo.v1.EchoService.EchoStream:input_type -> echo.v1.Message
-	3, // 9: echo.v1.EchoService.Echo:output_type -> echo.v1.Message
-	3, // 10: echo.v1.EchoService.EchoStream:output_type -> echo.v1.Message
-	9, // [9:11] is the sub-list for method output_type
-	7, // [7:9] is the sub-list for method input_type
-	7, // [7:7] is the sub-list for extension type_name
-	7, // [7:7] is the sub-list for extension extendee
-	0, // [0:7] is the sub-list for field type_name
+	1,  // 0: echo.v1.OtherMessage.another_message:type_name -> echo.v1.AnotherMessage
+	1,  // 1: echo.v1.OtherMessage.another_message_2:type_name -> echo.v1.AnotherMessage
+	0,  // 2: echo.v1.Message.enum:type_name -> echo.v1.Message.Enum
+	2,  // 3: echo.v1.Message.other_message:type_name -> echo.v1.OtherMessage
+	4,  // 4: echo.v1.Message.map_value:type_name -> echo.v1.Message.MapValueEntry
+	6,  // 5: echo.v1.Message.timestamp:type_name -> google.protobuf.Timestamp
+	7,  // 6: echo.v1.Message.duration:type_name -> google.protobuf.Duration
+	5,  // 7: echo.v1.Message.nested_message:type_name -> echo.v1.Message.NestedMessage
+	3,  // 8: echo.v1.EchoService.Echo:input_type -> echo.v1.Message
+	3,  // 9: echo.v1.EchoService.EchoStream:input_type -> echo.v1.Message
+	3,  // 10: echo.v1.EchoService.Echo:output_type -> echo.v1.Message
+	3,  // 11: echo.v1.EchoService.EchoStream:output_type -> echo.v1.Message
+	10, // [10:12] is the sub-list for method output_type
+	8,  // [8:10] is the sub-list for method input_type
+	8,  // [8:8] is the sub-list for extension type_name
+	8,  // [8:8] is the sub-list for extension extendee
+	0,  // [0:8] is the sub-list for field type_name
 }
 
 func init() { file_cmd_testserver_echo_echo_proto_init() }
@@ -537,7 +594,7 @@ func file_cmd_testserver_echo_echo_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_cmd_testserver_echo_echo_proto_rawDesc), len(file_cmd_testserver_echo_echo_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   4,
+			NumMessages:   5,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
