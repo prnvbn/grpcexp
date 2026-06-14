@@ -38,15 +38,6 @@ brew install prnvbn/tap/grpcexp
 go install github.com/prnvbn/grpcexp/cmd/grpcexp@latest
 ```
 
-### Windows
-
-Windows installation instructions are a WIP. In the meantime, you can download the latest release from the [releases page](https://github.com/prnvbn/grpcexp/releases)
-
-> [!NOTE]
->
-> To update `grpcexp` to the latest version, simply re-run any of the installation methods above.
-> They always install the most recent release.
-
 #### Enabling Command Autocompletion
 
 To enable autocomplete, add the following to your `.bashrc` or `.bash_profile` file:
