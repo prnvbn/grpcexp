@@ -39,6 +39,9 @@ func (g *fieldGroup) Empty() bool {
 func (g *fieldGroup) Value() map[string]any {
 	fields := make(map[string]any)
 	for _, field := range g.fields {
+		if field.optional && !field.present {
+			continue
+		}
 		if field.kind == FieldOneof {
 			value := field.oneofField.Value()
 			for k, v := range value {
@@ -62,38 +65,14 @@ func (g *fieldGroup) focusChild(idx int) {
 	if idx < 0 || idx >= len(g.fields) {
 		return
 	}
-	field := &g.fields[idx]
-	switch field.kind {
-	case FieldText:
-		field.textInput.Focus()
-	case FieldGroup:
-		field.fieldGroup.FocusFirst()
-	case FieldList:
-		field.listField.FocusFirst()
-	case FieldMap:
-		field.mapField.FocusFirst()
-	case FieldOneof:
-		field.oneofField.FocusFirst()
-	}
+	g.fields[idx].Focus()
 }
 
 func (g *fieldGroup) blurChild(idx int) {
 	if idx < 0 || idx >= len(g.fields) {
 		return
 	}
-	field := &g.fields[idx]
-	switch field.kind {
-	case FieldText:
-		field.textInput.Blur()
-	case FieldGroup:
-		field.fieldGroup.Blur()
-	case FieldList:
-		field.listField.Blur()
-	case FieldMap:
-		field.mapField.Blur()
-	case FieldOneof:
-		field.oneofField.Blur()
-	}
+	g.fields[idx].Blur()
 }
 
 func (g *fieldGroup) FocusFirst() {
@@ -112,19 +91,7 @@ func (g *fieldGroup) FocusLast() {
 	g.focused = true
 	g.focusIndex = len(g.fields) - 1
 
-	field := &g.fields[g.focusIndex]
-	switch field.kind {
-	case FieldGroup:
-		field.fieldGroup.FocusLast()
-	case FieldList:
-		field.listField.FocusLast()
-	case FieldMap:
-		field.mapField.FocusLast()
-	case FieldOneof:
-		field.oneofField.FocusLast()
-	default:
-		g.focusChild(g.focusIndex)
-	}
+	g.fields[g.focusIndex].FocusFromEnd()
 }
 
 func (g *fieldGroup) Blur() {
@@ -163,9 +130,14 @@ func (g *fieldGroup) NextField() bool {
 			return true
 		}
 		currentField.oneofField.Blur()
-	default:
-		g.blurChild(g.focusIndex)
 	}
+
+	if currentField.optional && !currentField.optionalControlFocused {
+		currentField.Blur()
+		currentField.optionalControlFocused = true
+		return true
+	}
+	g.blurChild(g.focusIndex)
 
 	if g.focusIndex >= len(g.fields)-1 {
 		return false
@@ -196,6 +168,10 @@ func (g *fieldGroup) PrevField() bool {
 	currentField := g.focusedField()
 	if currentField == nil {
 		return false
+	}
+	if currentField.optionalControlFocused {
+		currentField.focusValueFromEnd()
+		return true
 	}
 
 	switch currentField.kind {
@@ -228,19 +204,7 @@ func (g *fieldGroup) PrevField() bool {
 	}
 
 	g.focusIndex--
-	prevField := &g.fields[g.focusIndex]
-	switch prevField.kind {
-	case FieldGroup:
-		prevField.fieldGroup.FocusLast()
-	case FieldList:
-		prevField.listField.FocusLast()
-	case FieldMap:
-		prevField.mapField.FocusLast()
-	case FieldOneof:
-		prevField.oneofField.FocusLast()
-	default:
-		g.focusChild(g.focusIndex)
-	}
+	g.fields[g.focusIndex].FocusFromEnd()
 	return true
 }
 
@@ -254,7 +218,7 @@ func (g *fieldGroup) AcceptsTextInput() bool {
 	}
 	switch field.kind {
 	case FieldText:
-		return true
+		return !field.optionalControlFocused
 	case FieldList:
 		if field.listField != nil {
 			return field.listField.AcceptsTextInput()
@@ -281,24 +245,7 @@ func (g *fieldGroup) HandleKey(msg tea.KeyMsg) (tea.Cmd, bool) {
 		return nil, false
 	}
 
-	switch field.kind {
-	case FieldEnum, FieldBool:
-		switch msg.String() {
-		case "left", "right":
-			field.enumPicker.Update(msg)
-			return nil, true
-		}
-	case FieldGroup:
-		return field.fieldGroup.HandleKey(msg)
-	case FieldList:
-		return field.listField.HandleKey(msg)
-	case FieldMap:
-		return field.mapField.HandleKey(msg)
-	case FieldOneof:
-		return field.oneofField.HandleKey(msg)
-	}
-
-	return nil, false
+	return field.HandleKey(msg)
 }
 
 func (g *fieldGroup) Update(msg tea.Msg) tea.Cmd {
@@ -311,22 +258,7 @@ func (g *fieldGroup) Update(msg tea.Msg) tea.Cmd {
 		return nil
 	}
 
-	switch field.kind {
-	case FieldText:
-		var cmd tea.Cmd
-		field.textInput, cmd = field.textInput.Update(msg)
-		return cmd
-	case FieldGroup:
-		return field.fieldGroup.Update(msg)
-	case FieldList:
-		return field.listField.Update(msg)
-	case FieldMap:
-		return field.mapField.Update(msg)
-	case FieldOneof:
-		return field.oneofField.Update(msg)
-	}
-
-	return nil
+	return field.Update(msg)
 }
 
 func (g *fieldGroup) SetWidth(width int) {
@@ -345,9 +277,10 @@ func (g *fieldGroup) ViewWithDepth(depth int) string {
 
 	for i, field := range g.fields {
 		isFocused := g.focused && i == g.focusIndex
+		inputFocused := isFocused && !field.optionalControlFocused
 
 		var prefix string
-		if isFocused {
+		if inputFocused {
 			prefix = indent + "> "
 		} else {
 			prefix = indent + "  "
@@ -355,7 +288,7 @@ func (g *fieldGroup) ViewWithDepth(depth int) string {
 
 		switch field.kind {
 		case FieldGroup:
-			if isFocused {
+			if inputFocused {
 				b.WriteString(focusedLabelStyle.Render(prefix + field.name + ":"))
 			} else {
 				b.WriteString(labelStyle.Render(prefix + field.name + ":"))
@@ -363,7 +296,7 @@ func (g *fieldGroup) ViewWithDepth(depth int) string {
 			b.WriteString("\n")
 			b.WriteString(field.fieldGroup.ViewWithDepth(depth + 1))
 		case FieldList:
-			if isFocused {
+			if inputFocused {
 				b.WriteString(focusedLabelStyle.Render(prefix + field.name + ":"))
 			} else {
 				b.WriteString(labelStyle.Render(prefix + field.name + ":"))
@@ -371,7 +304,7 @@ func (g *fieldGroup) ViewWithDepth(depth int) string {
 			b.WriteString("\n")
 			b.WriteString(field.listField.ViewWithDepth(depth + 1))
 		case FieldMap:
-			if isFocused {
+			if inputFocused {
 				b.WriteString(focusedLabelStyle.Render(prefix + field.name + ":"))
 			} else {
 				b.WriteString(labelStyle.Render(prefix + field.name + ":"))
@@ -379,7 +312,7 @@ func (g *fieldGroup) ViewWithDepth(depth int) string {
 			b.WriteString("\n")
 			b.WriteString(field.mapField.ViewWithDepth(depth + 1))
 		case FieldOneof:
-			pickerFocused := isFocused && field.oneofField.focusState == oneofFocusPicker
+			pickerFocused := inputFocused && field.oneofField.focusState == oneofFocusPicker
 			if pickerFocused {
 				b.WriteString(focusedLabelStyle.Render(prefix + field.name + ": "))
 			} else {
@@ -389,12 +322,13 @@ func (g *fieldGroup) ViewWithDepth(depth int) string {
 			b.WriteString("\n")
 			b.WriteString(field.oneofField.ViewWithDepth(depth + 1))
 		default:
-			if isFocused {
+			if inputFocused {
 				b.WriteString(focusedLabelStyle.Render(prefix + field.name + ": "))
 			} else {
 				b.WriteString(labelStyle.Render(prefix + field.name + ": "))
 			}
-			b.WriteString(field.View())
+			b.WriteString(field.inputView(prefix))
+			b.WriteString(field.checkbox(isFocused && field.optionalControlFocused))
 			b.WriteString("\n")
 		}
 	}

@@ -24,8 +24,12 @@ const (
 )
 
 type Field struct {
-	name string
-	kind fieldKind
+	name                   string
+	kind                   fieldKind
+	optional               bool
+	present                bool
+	optionalControlFocused bool
+	width                  int
 
 	textInput  textinput.Model
 	enumPicker enumPicker
@@ -36,6 +40,8 @@ type Field struct {
 
 	validate func(string) error
 }
+
+const optionalControlWidth = 6
 
 func NewTextField(name string, placeholder string, charLimit int, validate func(string) error) *Field {
 	ti := textinput.New()
@@ -180,7 +186,14 @@ func validateTimestamp(s string) error {
 }
 
 func NewFieldFromProto(field protoreflect.FieldDescriptor) *Field {
-	return newFieldFromProto(field, "")
+	f := newFieldFromProto(field, "")
+	if f != nil {
+		f.optional = field.HasOptionalKeyword()
+		if f.optional && field.Kind() == protoreflect.StringKind {
+			f.textInput.Placeholder = "Enter string..."
+		}
+	}
+	return f
 }
 
 func newFieldFromProto(field protoreflect.FieldDescriptor, inputRole string) *Field {
@@ -309,7 +322,32 @@ func (f *Field) Name() string {
 	return f.name
 }
 
+func (f *Field) checkbox(focused bool) string {
+	if !f.optional {
+		return ""
+	}
+	mark := unselectedStyle.Render(" ")
+	if f.present {
+		mark = selectedStyle.Render("x")
+	}
+	box := bracketStyle.Render("[") + mark + bracketStyle.Render("]")
+	if focused {
+		return " " + focusedLabelStyle.Render("> ") + box
+	}
+	return "   " + box
+}
+
+func (f *Field) inputView(prefix string) string {
+	if f.optional && f.kind == FieldText && f.width > 0 {
+		f.textInput.Width = max(1, f.width-len(prefix)-len(f.name)-2-optionalControlWidth)
+	}
+	return f.View()
+}
+
 func (f *Field) AcceptsTextInput() bool {
+	if f.optionalControlFocused {
+		return false
+	}
 	switch f.kind {
 	case FieldText:
 		return true
@@ -330,6 +368,7 @@ func (f *Field) AcceptsTextInput() bool {
 }
 
 func (f *Field) Focus() tea.Cmd {
+	f.optionalControlFocused = false
 	switch f.kind {
 	case FieldText:
 		return f.textInput.Focus()
@@ -354,6 +393,16 @@ func (f *Field) Focus() tea.Cmd {
 }
 
 func (f *Field) FocusFromEnd() tea.Cmd {
+	if f.optional {
+		f.Blur()
+		f.optionalControlFocused = true
+		return nil
+	}
+	return f.focusValueFromEnd()
+}
+
+func (f *Field) focusValueFromEnd() tea.Cmd {
+	f.optionalControlFocused = false
 	switch f.kind {
 	case FieldText:
 		return f.textInput.Focus()
@@ -378,6 +427,7 @@ func (f *Field) FocusFromEnd() tea.Cmd {
 }
 
 func (f *Field) Blur() {
+	f.optionalControlFocused = false
 	switch f.kind {
 	case FieldText:
 		f.textInput.Blur()
@@ -445,6 +495,11 @@ func (f *Field) Prev() bool {
 }
 
 func (f *Field) HandleKey(msg tea.KeyMsg) (tea.Cmd, bool) {
+	if f.optionalControlFocused && msg.String() == "enter" {
+		f.present = !f.present
+		return nil, true
+	}
+
 	switch f.kind {
 	case FieldEnum, FieldBool:
 		switch msg.String() {
@@ -473,10 +528,16 @@ func (f *Field) HandleKey(msg tea.KeyMsg) (tea.Cmd, bool) {
 }
 
 func (f *Field) Update(msg tea.Msg) tea.Cmd {
+	if f.optionalControlFocused {
+		return nil
+	}
 	switch f.kind {
 	case FieldText:
 		var cmd tea.Cmd
 		f.textInput, cmd = f.textInput.Update(msg)
+		if f.optional && f.textInput.Value() != "" {
+			f.present = true
+		}
 		return cmd
 	case FieldGroup:
 		if f.fieldGroup != nil {
@@ -499,6 +560,7 @@ func (f *Field) Update(msg tea.Msg) tea.Cmd {
 }
 
 func (f *Field) SetWidth(width int) {
+	f.width = width
 	switch f.kind {
 	case FieldText:
 		f.textInput.Width = width
@@ -524,7 +586,8 @@ func (f *Field) RenderWithFocus(focused bool, depth int) string {
 	indent := strings.Repeat("  ", depth)
 
 	var prefix string
-	if focused {
+	inputFocused := focused && !f.optionalControlFocused
+	if inputFocused {
 		prefix = indent + "> "
 	} else {
 		prefix = indent + "  "
@@ -532,7 +595,7 @@ func (f *Field) RenderWithFocus(focused bool, depth int) string {
 
 	switch f.kind {
 	case FieldGroup:
-		if focused {
+		if inputFocused {
 			b.WriteString(focusedLabelStyle.Render(prefix + f.name + ":"))
 		} else {
 			b.WriteString(labelStyle.Render(prefix + f.name + ":"))
@@ -540,7 +603,7 @@ func (f *Field) RenderWithFocus(focused bool, depth int) string {
 		b.WriteString("\n")
 		b.WriteString(f.fieldGroup.ViewWithDepth(depth + 1))
 	case FieldList:
-		if focused {
+		if inputFocused {
 			b.WriteString(focusedLabelStyle.Render(prefix + f.name + ":"))
 		} else {
 			b.WriteString(labelStyle.Render(prefix + f.name + ":"))
@@ -548,7 +611,7 @@ func (f *Field) RenderWithFocus(focused bool, depth int) string {
 		b.WriteString("\n")
 		b.WriteString(f.listField.ViewWithDepth(depth + 1))
 	case FieldMap:
-		if focused {
+		if inputFocused {
 			b.WriteString(focusedLabelStyle.Render(prefix + f.name + ":"))
 		} else {
 			b.WriteString(labelStyle.Render(prefix + f.name + ":"))
@@ -556,7 +619,7 @@ func (f *Field) RenderWithFocus(focused bool, depth int) string {
 		b.WriteString("\n")
 		b.WriteString(f.mapField.ViewWithDepth(depth + 1))
 	case FieldOneof:
-		if focused {
+		if inputFocused {
 			b.WriteString(focusedLabelStyle.Render(prefix + f.name + ":"))
 		} else {
 			b.WriteString(labelStyle.Render(prefix + f.name + ":"))
@@ -564,12 +627,13 @@ func (f *Field) RenderWithFocus(focused bool, depth int) string {
 		b.WriteString("\n")
 		b.WriteString(f.oneofField.ViewWithDepth(depth + 1))
 	default:
-		if focused {
+		if inputFocused {
 			b.WriteString(focusedLabelStyle.Render(prefix + f.name + ": "))
 		} else {
 			b.WriteString(labelStyle.Render(prefix + f.name + ": "))
 		}
-		b.WriteString(f.View())
+		b.WriteString(f.inputView(prefix))
+		b.WriteString(f.checkbox(focused && f.optionalControlFocused))
 		b.WriteString("\n")
 	}
 
