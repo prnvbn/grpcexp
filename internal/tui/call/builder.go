@@ -158,7 +158,7 @@ func buildFieldGroup(msgDesc protoreflect.MessageDescriptor) *fieldGroup {
 			continue
 		}
 
-		if field.ContainingOneof() != nil {
+		if oneof := field.ContainingOneof(); oneof != nil && !oneof.IsSynthetic() {
 			continue
 		}
 
@@ -179,6 +179,9 @@ func buildFieldGroup(msgDesc protoreflect.MessageDescriptor) *fieldGroup {
 	oneofs := msgDesc.Oneofs()
 	for i := 0; i < oneofs.Len(); i++ {
 		oneof := oneofs.Get(i)
+		if oneof.IsSynthetic() {
+			continue
+		}
 		oneofName := string(oneof.Name())
 		oneofField := NewOneofField(oneofName, oneof)
 		if oneofField != nil {
