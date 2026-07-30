@@ -193,11 +193,7 @@ func (f *Stream) renderPanes() string {
 func (f *Stream) renderSendPane() string {
 	var out strings.Builder
 
-	title := "Send"
-	if f.activePane == streamPaneSend {
-		title = "> " + title
-	}
-	out.WriteString(headerStyle.Render(title))
+	out.WriteString(renderStreamPaneTitle("Send", f.activePane == streamPaneSend))
 	out.WriteString("\n")
 	out.WriteString(f.builder.View("Send", f.activePane == streamPaneSend, f.sendClosed || f.closed))
 	out.WriteString("\n\n")
@@ -211,11 +207,7 @@ func (f *Stream) renderSendPane() string {
 func (f *Stream) renderReceivePane() string {
 	var out strings.Builder
 
-	title := "Receive"
-	if f.activePane == streamPaneRecv {
-		title = "> " + title
-	}
-	out.WriteString(headerStyle.Render(title))
+	out.WriteString(renderStreamPaneTitle("Receive", f.activePane == streamPaneRecv))
 	out.WriteString("\n")
 
 	lines := f.visibleTranscript()
@@ -230,6 +222,13 @@ func (f *Stream) renderReceivePane() string {
 	out.WriteString(labelStyle.Render(f.receiveHelp()))
 
 	return out.String()
+}
+
+func renderStreamPaneTitle(title string, selected bool) string {
+	if selected {
+		return headerStyle.Render(selectedStyle.Render("> " + title))
+	}
+	return headerStyle.Render(title)
 }
 
 func (f *Stream) sendMessage() tea.Cmd {
