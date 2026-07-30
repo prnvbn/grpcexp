@@ -46,8 +46,9 @@ type Stream struct {
 }
 
 type transcriptEntry struct {
-	at   time.Time
-	text string
+	at       time.Time
+	display  string
+	fullText string
 }
 
 type streamEventMsg struct {
@@ -215,7 +216,7 @@ func (f *Stream) renderReceivePane() string {
 		out.WriteString(labelStyle.Render("No stream events yet."))
 		out.WriteString("\n")
 	} else {
-		out.WriteString(strings.Join(f.transcriptLines(lines), "\n"))
+		out.WriteString(strings.Join(f.transcriptLines(lines, false), "\n"))
 		out.WriteString("\n")
 	}
 	out.WriteString("\n")
@@ -243,7 +244,7 @@ func (f *Stream) sendMessage() tea.Cmd {
 
 	request := f.builder.Value()
 	f.requests <- request
-	f.appendTranscript("> sent " + payloadPreview(request))
+	f.appendSentTranscript(request)
 	f.scrollToBottom()
 
 	if !f.method.IsStreamingClient() {
@@ -373,8 +374,18 @@ func (f *Stream) receiveHelp() string {
 
 func (f *Stream) appendTranscript(text string) {
 	f.transcript = append(f.transcript, transcriptEntry{
-		at:   time.Now(),
-		text: text,
+		at:       time.Now(),
+		display:  text,
+		fullText: text,
+	})
+}
+
+func (f *Stream) appendSentTranscript(payload map[string]any) {
+	fullPayload := marshalPayload(payload)
+	f.transcript = append(f.transcript, transcriptEntry{
+		at:       time.Now(),
+		display:  "> sent " + payloadPreview(fullPayload),
+		fullText: "> sent " + fullPayload,
 	})
 }
 
@@ -395,14 +406,18 @@ func (f *Stream) visibleTranscript() []transcriptEntry {
 	return f.transcript[start : start+maxLines]
 }
 
-func (f *Stream) transcriptLines(entries []transcriptEntry) []string {
+func (f *Stream) transcriptLines(entries []transcriptEntry, full bool) []string {
 	lines := make([]string, 0, len(entries))
 	for _, entry := range entries {
+		text := entry.display
+		if full {
+			text = entry.fullText
+		}
 		if f.timestamps {
-			lines = append(lines, entry.at.Format("15:04:05.000000000")+" "+entry.text)
+			lines = append(lines, entry.at.Format("15:04:05.000000000")+" "+text)
 			continue
 		}
-		lines = append(lines, entry.text)
+		lines = append(lines, text)
 	}
 	return lines
 }
@@ -434,22 +449,24 @@ func (f *Stream) copyGRPCURLCommand() {
 }
 
 func (f *Stream) copyTranscript() {
-	if err := clipboard.WriteAll(strings.Join(f.transcriptLines(f.transcript), "\n")); err != nil {
+	if err := clipboard.WriteAll(strings.Join(f.transcriptLines(f.transcript, true), "\n")); err != nil {
 		fmt.Fprintf(os.Stderr, "error writing to clipboard: %v\n", err)
 	}
 }
 
-func payloadPreview(payload map[string]any) string {
-	const maxPayloadPreviewLen = 120
-
+func marshalPayload(payload map[string]any) string {
 	data, err := json.Marshal(payload)
 	if err != nil {
 		return "<failed to marshal request>"
 	}
+	return string(data)
+}
 
-	preview := string(data)
-	if len(preview) <= maxPayloadPreviewLen {
-		return preview
+func payloadPreview(payload string) string {
+	const maxPayloadPreviewLen = 120
+
+	if len(payload) <= maxPayloadPreviewLen {
+		return payload
 	}
-	return preview[:maxPayloadPreviewLen-3] + "..."
+	return payload[:maxPayloadPreviewLen-3] + "..."
 }
