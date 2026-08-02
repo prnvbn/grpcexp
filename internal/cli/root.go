@@ -20,6 +20,7 @@ var (
 	port     int
 	addr     string
 	protoset string
+	headers  []string
 	useTLS   bool
 	timeout  time.Duration
 )
@@ -54,6 +55,7 @@ func run(cmd *cobra.Command, args []string) error {
 		Creds:     creds,
 		UserAgent: "grpcexp/" + strings.TrimSpace(version),
 		Protoset:  protoset,
+		Headers:   headers,
 	})
 	if err != nil {
 		return err
@@ -83,6 +85,7 @@ func init() {
 	rootCmd.Flags().IntVarP(&port, "port", "p", 50051, "grpc server port")
 	rootCmd.Flags().StringVarP(&addr, "addr", "a", "", "grpc server address")
 	rootCmd.Flags().StringVar(&protoset, "protoset", "", "path to protoset file (uses server reflection if not specified)")
+	rootCmd.Flags().StringArrayVarP(&headers, "header", "H", nil, "additional header in 'name: value' format (may be repeated)")
 	rootCmd.Flags().BoolVar(&useTLS, "tls", false, "use TLS to connect to the server")
 	rootCmd.Flags().DurationVar(&timeout, "timeout", 10*time.Second, "connection timeout")
 }

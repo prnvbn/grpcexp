@@ -17,6 +17,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
@@ -25,6 +26,7 @@ type Config struct {
 	Creds     credentials.TransportCredentials
 	UserAgent string
 	Protoset  string
+	Headers   []string
 }
 
 type Client struct {
@@ -34,6 +36,10 @@ type Client struct {
 }
 
 func NewClient(ctx context.Context, config Config) (*Client, error) {
+	if err := validateHeaders(config.Headers); err != nil {
+		return nil, err
+	}
+
 	opts := []grpc.DialOption{
 		grpc.WithUserAgent(config.UserAgent),
 	}
@@ -50,12 +56,25 @@ func NewClient(ctx context.Context, config Config) (*Client, error) {
 		}
 	} else {
 		refCtx := context.Background()
+		if len(config.Headers) > 0 {
+			refCtx = metadata.NewOutgoingContext(refCtx, grpcurl.MetadataFromHeaders(config.Headers))
+		}
 		refClient := grpcreflect.NewClientAuto(refCtx, cc)
 		refClient.AllowMissingFileDescriptors()
 		source = grpcurl.DescriptorSourceFromServer(refCtx, refClient)
 	}
 
 	return &Client{source: source, conn: cc, config: config}, nil
+}
+
+func validateHeaders(headers []string) error {
+	for _, header := range headers {
+		name, _, ok := strings.Cut(header, ":")
+		if !ok || strings.TrimSpace(name) == "" {
+			return fmt.Errorf("invalid header %q: expected 'name: value'", header)
+		}
+	}
+	return nil
 }
 
 func (c *Client) InvokeRPC(ctx context.Context, methodFullName string, request map[string]any) (string, error) {
@@ -78,7 +97,7 @@ func (c *Client) InvokeRPC(ctx context.Context, methodFullName string, request m
 		VerbosityLevel: 0,
 	}
 
-	err = grpcurl.InvokeRPC(ctx, c.source, c.conn, methodFullName, nil, handler, rf.Next)
+	err = grpcurl.InvokeRPC(ctx, c.source, c.conn, methodFullName, c.config.Headers, handler, rf.Next)
 	if err != nil {
 		return "", fmt.Errorf("RPC invocation failed: %w", err)
 	}
@@ -120,7 +139,7 @@ func (c *Client) InvokeStreaming(ctx context.Context, methodFullName string, req
 		return rf.Next(msg)
 	}
 
-	if err := grpcurl.InvokeRPC(ctx, c.source, c.conn, methodFullName, nil, handler, requestSupplier); err != nil {
+	if err := grpcurl.InvokeRPC(ctx, c.source, c.conn, methodFullName, c.config.Headers, handler, requestSupplier); err != nil {
 		events <- StreamEvent{Kind: StreamEventError, Err: fmt.Errorf("RPC invocation failed: %w", err)}
 		return err
 	}
@@ -151,6 +170,9 @@ func (c *Client) GRPCURLCommand(methodFullName string, request map[string]any) (
 	}
 	if c.config.UserAgent != "" {
 		args = append(args, "-user-agent", c.config.UserAgent)
+	}
+	for _, header := range c.config.Headers {
+		args = append(args, "-H", header)
 	}
 	args = append(args, "-d", string(jsonData), c.config.Target, methodFullName)
 

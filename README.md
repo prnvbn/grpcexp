@@ -12,6 +12,17 @@
 
 ![Streaming call demo](demos/streaming.gif)
 
+### Request metadata
+
+Use `-H` or `--header` multiple times to send request metadata. Headers are
+included in both server reflection and RPC requests.
+
+```bash
+grpcexp --addr api.example.com:443 --tls \
+  -H "authorization: Bearer ${TOKEN}" \
+  -H "x-tenant-id: acme"
+```
+
 ## Installation
 
 ### Linux or MacOS
