@@ -5,11 +5,6 @@ on:
     types: [edited]
 
   workflow_dispatch:
-    inputs:
-      version:
-        description: "Version to update the formula to (optional)"
-        required: false
-        default: ""
 
 permissions:
   contents: write
@@ -83,9 +78,7 @@ jobs:
           FORMULA="Formula/grpcexp.rb"
 
           # Determine version based on trigger type
-          if [ -n "${{ github.event.inputs.version }}" ]; then
-            TAG_VERSION="${{ github.event.inputs.version }}"
-          elif [ "${{ github.event_name }}" = "release" ]; then
+          if [ "${{ github.event_name }}" = "release" ]; then
             TAG_VERSION="${{ github.ref_name }}"
           else
             TAG_VERSION="${GITHUB_REF_NAME#refs/tags/}"
