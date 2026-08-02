@@ -12,15 +12,31 @@
 
 ![Streaming call demo](demos/streaming.gif)
 
-### Request metadata
+### Usage
 
-Use `-H` or `--header` multiple times to send request metadata. Headers are
-included in both server reflection and RPC requests.
+```sh
+$ go run cmd/grpcexp/main.go --help
+An interactive explorer for interacting with grpc servers.
 
-```bash
-grpcexp --addr api.example.com:443 --tls \
-  -H "authorization: Bearer ${TOKEN}" \
-  -H "x-tenant-id: acme"
+Usage:
+  grpcexp [flags]
+  grpcexp [command]
+
+Available Commands:
+  completion  Generate the autocompletion script for the specified shell
+  help        Help about any command
+  version     grpcexp version
+
+Flags:
+  -a, --addr string               grpc server address
+  -H, --header stringArray        additional header in 'name: value' format (may be repeated)
+  -h, --help                      help for grpcexp
+      --import-path stringArray   directory used to resolve proto imports (may be repeated)
+  -p, --port int                  grpc server port (default 50051)
+      --proto stringArray         path to a .proto source file (may be repeated)
+      --protoset string           path to a compiled protoset descriptor file
+      --timeout duration          connection timeout (default 10s)
+      --tls                       use TLS to connect to the server
 ```
 
 ## Installation

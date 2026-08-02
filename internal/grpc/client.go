@@ -22,11 +22,13 @@ import (
 )
 
 type Config struct {
-	Target    string
-	Creds     credentials.TransportCredentials
-	UserAgent string
-	Protoset  string
-	Headers   []string
+	Target      string
+	Creds       credentials.TransportCredentials
+	UserAgent   string
+	Protoset    string
+	ProtoFiles  []string
+	ImportPaths []string
+	Headers     []string
 }
 
 type Client struct {
@@ -36,7 +38,12 @@ type Client struct {
 }
 
 func NewClient(ctx context.Context, config Config) (*Client, error) {
-	if err := validateHeaders(config.Headers); err != nil {
+	if err := validateConfig(config); err != nil {
+		return nil, err
+	}
+
+	source, err := loadFileDescriptorSource(config)
+	if err != nil {
 		return nil, err
 	}
 
@@ -48,13 +55,7 @@ func NewClient(ctx context.Context, config Config) (*Client, error) {
 		return nil, err
 	}
 
-	var source grpcurl.DescriptorSource
-	if config.Protoset != "" {
-		source, err = grpcurl.DescriptorSourceFromProtoSets(config.Protoset)
-		if err != nil {
-			return nil, fmt.Errorf("failed to load protoset file: %w", err)
-		}
-	} else {
+	if source == nil {
 		refCtx := context.Background()
 		if len(config.Headers) > 0 {
 			refCtx = metadata.NewOutgoingContext(refCtx, grpcurl.MetadataFromHeaders(config.Headers))
@@ -65,6 +66,34 @@ func NewClient(ctx context.Context, config Config) (*Client, error) {
 	}
 
 	return &Client{source: source, conn: cc, config: config}, nil
+}
+
+func validateConfig(config Config) error {
+	if config.Protoset != "" && len(config.ProtoFiles) > 0 {
+		return fmt.Errorf("use either --protoset or --proto, not both")
+	}
+	if len(config.ImportPaths) > 0 && len(config.ProtoFiles) == 0 {
+		return fmt.Errorf("--import-path requires at least one --proto")
+	}
+	return validateHeaders(config.Headers)
+}
+
+func loadFileDescriptorSource(config Config) (grpcurl.DescriptorSource, error) {
+	if config.Protoset != "" {
+		source, err := grpcurl.DescriptorSourceFromProtoSets(config.Protoset)
+		if err != nil {
+			return nil, fmt.Errorf("failed to load protoset file: %w", err)
+		}
+		return source, nil
+	}
+	if len(config.ProtoFiles) > 0 {
+		source, err := grpcurl.DescriptorSourceFromProtoFiles(config.ImportPaths, config.ProtoFiles...)
+		if err != nil {
+			return nil, fmt.Errorf("failed to load proto source files: %w", err)
+		}
+		return source, nil
+	}
+	return nil, nil
 }
 
 func validateHeaders(headers []string) error {
@@ -167,6 +196,12 @@ func (c *Client) GRPCURLCommand(methodFullName string, request map[string]any) (
 	}
 	if c.config.Protoset != "" {
 		args = append(args, "-protoset", c.config.Protoset)
+	}
+	for _, importPath := range c.config.ImportPaths {
+		args = append(args, "-import-path", importPath)
+	}
+	for _, protoFile := range c.config.ProtoFiles {
+		args = append(args, "-proto", protoFile)
 	}
 	if c.config.UserAgent != "" {
 		args = append(args, "-user-agent", c.config.UserAgent)

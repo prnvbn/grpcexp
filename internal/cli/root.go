@@ -17,12 +17,14 @@ import (
 )
 
 var (
-	port     int
-	addr     string
-	protoset string
-	headers  []string
-	useTLS   bool
-	timeout  time.Duration
+	port        int
+	addr        string
+	protoset    string
+	protoFiles  []string
+	importPaths []string
+	headers     []string
+	useTLS      bool
+	timeout     time.Duration
 )
 
 var rootCmd = &cobra.Command{
@@ -51,11 +53,13 @@ func run(cmd *cobra.Command, args []string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 	grpcClient, err := grpc.NewClient(ctx, grpc.Config{
-		Target:    target,
-		Creds:     creds,
-		UserAgent: "grpcexp/" + strings.TrimSpace(version),
-		Protoset:  protoset,
-		Headers:   headers,
+		Target:      target,
+		Creds:       creds,
+		UserAgent:   "grpcexp/" + strings.TrimSpace(version),
+		Protoset:    protoset,
+		ProtoFiles:  protoFiles,
+		ImportPaths: importPaths,
+		Headers:     headers,
 	})
 	if err != nil {
 		return err
@@ -84,8 +88,11 @@ func Execute() {
 func init() {
 	rootCmd.Flags().IntVarP(&port, "port", "p", 50051, "grpc server port")
 	rootCmd.Flags().StringVarP(&addr, "addr", "a", "", "grpc server address")
-	rootCmd.Flags().StringVar(&protoset, "protoset", "", "path to protoset file (uses server reflection if not specified)")
+	rootCmd.Flags().StringVar(&protoset, "protoset", "", "path to a compiled protoset descriptor file")
+	rootCmd.Flags().StringArrayVar(&protoFiles, "proto", nil, "path to a .proto source file (may be repeated)")
+	rootCmd.Flags().StringArrayVar(&importPaths, "import-path", nil, "directory used to resolve proto imports (may be repeated)")
 	rootCmd.Flags().StringArrayVarP(&headers, "header", "H", nil, "additional header in 'name: value' format (may be repeated)")
 	rootCmd.Flags().BoolVar(&useTLS, "tls", false, "use TLS to connect to the server")
 	rootCmd.Flags().DurationVar(&timeout, "timeout", 10*time.Second, "connection timeout")
+	rootCmd.MarkFlagsMutuallyExclusive("protoset", "proto")
 }
