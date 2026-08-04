@@ -14,7 +14,7 @@
 
 ### Usage
 
-```sh
+```
 $ go run cmd/grpcexp/main.go --help
 An interactive explorer for interacting with grpc servers.
 
@@ -82,7 +82,7 @@ Let me preface this by saying, I really like `grpcurl` but have a few UX nits:
 
 <summary>I have to run ~5 commands to make one grpc call</summary>
 
-```shell
+```bash
 $ grpcurl -plaintext :50051 list
 grpc.reflection.v1.ServerReflection
 grpc.reflection.v1alpha.ServerReflection
