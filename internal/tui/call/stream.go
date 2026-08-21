@@ -394,10 +394,7 @@ func (f *Stream) visibleTranscript() []transcriptEntry {
 		return f.transcript
 	}
 
-	maxLines := f.height - 8
-	if maxLines < 3 {
-		maxLines = 3
-	}
+	maxLines := max(f.height-8, 3)
 	if maxLines >= len(f.transcript) {
 		return f.transcript
 	}
@@ -423,10 +420,7 @@ func (f *Stream) transcriptLines(entries []transcriptEntry, full bool) []string 
 }
 
 func (f *Stream) maxScroll() int {
-	maxLines := f.height - 8
-	if maxLines < 3 {
-		maxLines = 3
-	}
+	maxLines := max(f.height-8, 3)
 	if len(f.transcript) <= maxLines {
 		return 0
 	}

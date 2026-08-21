@@ -1,6 +1,6 @@
 module github.com/prnvbn/grpcexp
 
-go 1.26.5
+go 1.27
 
 require (
 	github.com/atotto/clipboard v0.1.4

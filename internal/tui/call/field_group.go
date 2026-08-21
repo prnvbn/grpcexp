@@ -1,6 +1,7 @@
 package call
 
 import (
+	"maps"
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -44,9 +45,7 @@ func (g *fieldGroup) Value() map[string]any {
 		}
 		if field.kind == FieldOneof {
 			value := field.oneofField.Value()
-			for k, v := range value {
-				fields[k] = v
-			}
+			maps.Copy(fields, value)
 			continue
 		}
 		fields[field.name] = field.Value()
