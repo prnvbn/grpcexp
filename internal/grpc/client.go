@@ -139,7 +139,12 @@ func (c *Client) InvokeRPC(ctx context.Context, methodFullName string, request m
 }
 
 func (c *Client) InvokeStreaming(ctx context.Context, methodFullName string, requests <-chan map[string]any, events chan<- StreamEvent) error {
-	_, formatter, err := grpcurl.RequestParserAndFormatter(grpcurl.FormatJSON, c.source, nil, grpcurl.FormatOptions{})
+	_, formatter, err := grpcurl.RequestParserAndFormatter(
+		grpcurl.FormatJSON,
+		c.source,
+		bytes.NewReader(nil),
+		grpcurl.FormatOptions{},
+	)
 	if err != nil {
 		return fmt.Errorf("failed to create response formatter: %w", err)
 	}
