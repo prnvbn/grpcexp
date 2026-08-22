@@ -31,11 +31,13 @@ type Unary struct {
 
 	response    string
 	responseErr error
+	elapsed     time.Duration
 }
 
 type rpcResultMsg struct {
 	response string
 	err      error
+	elapsed  time.Duration
 }
 
 func NewUnary(method protoreflect.MethodDescriptor, client *grpc.Client) *Unary {
@@ -56,6 +58,7 @@ func (f *Unary) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		f.state = unaryStateResult
 		f.response = msg.response
 		f.responseErr = msg.err
+		f.elapsed = msg.elapsed
 		return f, nil
 	case tea.KeyMsg:
 		switch f.state {
@@ -106,6 +109,8 @@ func (f *Unary) View() string {
 			out.WriteString("\n\n")
 			out.WriteString(f.response)
 		}
+		out.WriteString("\n\n")
+		out.WriteString(labelStyle.Render("elapsed: " + f.elapsed.String()))
 		out.WriteString("\n\n")
 		out.WriteString(labelStyle.Render("esc: back • r: resubmit • y: copy response • ctrl+y: copy grpcurl • q: quit"))
 	case unaryStateInput:
@@ -159,8 +164,13 @@ func (f *Unary) invokeRPC() tea.Cmd {
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cancel()
 
+		startedAt := time.Now()
 		response, err := client.InvokeRPC(ctx, methodFullName, request)
-		return rpcResultMsg{response: response, err: err}
+		return rpcResultMsg{
+			response: response,
+			err:      err,
+			elapsed:  time.Since(startedAt),
+		}
 	}
 }
 

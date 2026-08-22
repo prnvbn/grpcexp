@@ -7,13 +7,16 @@ import (
 	"io"
 	"log"
 	"net"
+	"time"
 
 	echov1 "github.com/prnvbn/grpcexp/cmd/testserver/echo"
 	hellov1 "github.com/prnvbn/grpcexp/cmd/testserver/hello"
 	helloworldpb "google.golang.org/grpc/examples/helloworld/helloworld"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/reflection"
+	"google.golang.org/grpc/status"
 )
 
 var (
@@ -71,6 +74,37 @@ func (s *server) HelloStream(stream hellov1.HelloService_HelloStreamServer) erro
 		if err := stream.Send(&hellov1.HelloReply{Message: "Hello " + name}); err != nil {
 			return err
 		}
+	}
+}
+
+func (s *server) SlowHello(ctx context.Context, in *hellov1.SlowHelloRequest) (*hellov1.SlowHelloResponse, error) {
+	duration := in.GetDuration()
+	if duration == nil {
+		return nil, status.Error(codes.InvalidArgument, "duration is required")
+	}
+	if err := duration.CheckValid(); err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "invalid duration: %v", err)
+	}
+
+	delay := duration.AsDuration()
+	if delay < 0 {
+		return nil, status.Error(codes.InvalidArgument, "duration must not be negative")
+	}
+
+	name := in.GetName()
+	if name == "" {
+		name = "there"
+	}
+	log.Printf("Received slow hello: %v, waiting %s", name, delay)
+
+	timer := time.NewTimer(delay)
+	defer timer.Stop()
+
+	select {
+	case <-ctx.Done():
+		return nil, status.FromContextError(ctx.Err()).Err()
+	case <-timer.C:
+		return &hellov1.SlowHelloResponse{Message: "Hello " + name}, nil
 	}
 }
 

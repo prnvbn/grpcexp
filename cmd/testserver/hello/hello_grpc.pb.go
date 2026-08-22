@@ -20,6 +20,7 @@ const _ = grpc.SupportPackageIsVersion9
 
 const (
 	HelloService_HelloStream_FullMethodName = "/hello.v1.HelloService/HelloStream"
+	HelloService_SlowHello_FullMethodName   = "/hello.v1.HelloService/SlowHello"
 )
 
 // HelloServiceClient is the client API for HelloService service.
@@ -27,6 +28,7 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type HelloServiceClient interface {
 	HelloStream(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[HelloRequest, HelloReply], error)
+	SlowHello(ctx context.Context, in *SlowHelloRequest, opts ...grpc.CallOption) (*SlowHelloResponse, error)
 }
 
 type helloServiceClient struct {
@@ -50,11 +52,22 @@ func (c *helloServiceClient) HelloStream(ctx context.Context, opts ...grpc.CallO
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type HelloService_HelloStreamClient = grpc.BidiStreamingClient[HelloRequest, HelloReply]
 
+func (c *helloServiceClient) SlowHello(ctx context.Context, in *SlowHelloRequest, opts ...grpc.CallOption) (*SlowHelloResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SlowHelloResponse)
+	err := c.cc.Invoke(ctx, HelloService_SlowHello_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // HelloServiceServer is the server API for HelloService service.
 // All implementations must embed UnimplementedHelloServiceServer
 // for forward compatibility.
 type HelloServiceServer interface {
 	HelloStream(grpc.BidiStreamingServer[HelloRequest, HelloReply]) error
+	SlowHello(context.Context, *SlowHelloRequest) (*SlowHelloResponse, error)
 	mustEmbedUnimplementedHelloServiceServer()
 }
 
@@ -67,6 +80,9 @@ type UnimplementedHelloServiceServer struct{}
 
 func (UnimplementedHelloServiceServer) HelloStream(grpc.BidiStreamingServer[HelloRequest, HelloReply]) error {
 	return status.Error(codes.Unimplemented, "method HelloStream not implemented")
+}
+func (UnimplementedHelloServiceServer) SlowHello(context.Context, *SlowHelloRequest) (*SlowHelloResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method SlowHello not implemented")
 }
 func (UnimplementedHelloServiceServer) mustEmbedUnimplementedHelloServiceServer() {}
 func (UnimplementedHelloServiceServer) testEmbeddedByValue()                      {}
@@ -96,13 +112,36 @@ func _HelloService_HelloStream_Handler(srv interface{}, stream grpc.ServerStream
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type HelloService_HelloStreamServer = grpc.BidiStreamingServer[HelloRequest, HelloReply]
 
+func _HelloService_SlowHello_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SlowHelloRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(HelloServiceServer).SlowHello(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: HelloService_SlowHello_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(HelloServiceServer).SlowHello(ctx, req.(*SlowHelloRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // HelloService_ServiceDesc is the grpc.ServiceDesc for HelloService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var HelloService_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "hello.v1.HelloService",
 	HandlerType: (*HelloServiceServer)(nil),
-	Methods:     []grpc.MethodDesc{},
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "SlowHello",
+			Handler:    _HelloService_SlowHello_Handler,
+		},
+	},
 	Streams: []grpc.StreamDesc{
 		{
 			StreamName:    "HelloStream",

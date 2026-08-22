@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package hello.v1;
 
+import "google/protobuf/duration.proto";
+
 message HelloRequest {
   string name = 1;
 }
@@ -10,6 +12,16 @@ message HelloReply {
   string message = 1;
 }
 
+message SlowHelloRequest {
+  string name = 1;
+  google.protobuf.Duration duration = 2;
+}
+
+message SlowHelloResponse {
+  string message = 1;
+}
+
 service HelloService {
   rpc HelloStream(stream HelloRequest) returns (stream HelloReply);
+  rpc SlowHello(SlowHelloRequest) returns (SlowHelloResponse);
 }

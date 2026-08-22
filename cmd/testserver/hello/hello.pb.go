@@ -9,6 +9,7 @@ package hellov1
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	durationpb "google.golang.org/protobuf/types/known/durationpb"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
@@ -109,18 +110,120 @@ func (x *HelloReply) GetMessage() string {
 	return ""
 }
 
+type SlowHelloRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Duration      *durationpb.Duration   `protobuf:"bytes,2,opt,name=duration,proto3" json:"duration,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SlowHelloRequest) Reset() {
+	*x = SlowHelloRequest{}
+	mi := &file_cmd_testserver_hello_hello_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SlowHelloRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SlowHelloRequest) ProtoMessage() {}
+
+func (x *SlowHelloRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_cmd_testserver_hello_hello_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SlowHelloRequest.ProtoReflect.Descriptor instead.
+func (*SlowHelloRequest) Descriptor() ([]byte, []int) {
+	return file_cmd_testserver_hello_hello_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *SlowHelloRequest) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *SlowHelloRequest) GetDuration() *durationpb.Duration {
+	if x != nil {
+		return x.Duration
+	}
+	return nil
+}
+
+type SlowHelloResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Message       string                 `protobuf:"bytes,1,opt,name=message,proto3" json:"message,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SlowHelloResponse) Reset() {
+	*x = SlowHelloResponse{}
+	mi := &file_cmd_testserver_hello_hello_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SlowHelloResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SlowHelloResponse) ProtoMessage() {}
+
+func (x *SlowHelloResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_cmd_testserver_hello_hello_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SlowHelloResponse.ProtoReflect.Descriptor instead.
+func (*SlowHelloResponse) Descriptor() ([]byte, []int) {
+	return file_cmd_testserver_hello_hello_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *SlowHelloResponse) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
 var File_cmd_testserver_hello_hello_proto protoreflect.FileDescriptor
 
 const file_cmd_testserver_hello_hello_proto_rawDesc = "" +
 	"\n" +
-	" cmd/testserver/hello/hello.proto\x12\bhello.v1\"\"\n" +
+	" cmd/testserver/hello/hello.proto\x12\bhello.v1\x1a\x1egoogle/protobuf/duration.proto\"\"\n" +
 	"\fHelloRequest\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\"&\n" +
 	"\n" +
 	"HelloReply\x12\x18\n" +
-	"\amessage\x18\x01 \x01(\tR\amessage2O\n" +
+	"\amessage\x18\x01 \x01(\tR\amessage\"]\n" +
+	"\x10SlowHelloRequest\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x125\n" +
+	"\bduration\x18\x02 \x01(\v2\x19.google.protobuf.DurationR\bduration\"-\n" +
+	"\x11SlowHelloResponse\x12\x18\n" +
+	"\amessage\x18\x01 \x01(\tR\amessage2\x95\x01\n" +
 	"\fHelloService\x12?\n" +
-	"\vHelloStream\x12\x16.hello.v1.HelloRequest\x1a\x14.hello.v1.HelloReply(\x010\x01B\xa2\x01\n" +
+	"\vHelloStream\x12\x16.hello.v1.HelloRequest\x1a\x14.hello.v1.HelloReply(\x010\x01\x12D\n" +
+	"\tSlowHello\x12\x1a.hello.v1.SlowHelloRequest\x1a\x1b.hello.v1.SlowHelloResponseB\xa2\x01\n" +
 	"\fcom.hello.v1B\n" +
 	"HelloProtoP\x01ZEgithub.com/prnvbn/grpcexp/cmd/testserver/cmd/testserver/hello;hellov1\xa2\x02\x03HXX\xaa\x02\bHello.V1\xca\x02\bHello\\V1\xe2\x02\x14Hello\\V1\\GPBMetadata\xea\x02\tHello::V1b\x06proto3"
 
@@ -136,19 +239,25 @@ func file_cmd_testserver_hello_hello_proto_rawDescGZIP() []byte {
 	return file_cmd_testserver_hello_hello_proto_rawDescData
 }
 
-var file_cmd_testserver_hello_hello_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_cmd_testserver_hello_hello_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_cmd_testserver_hello_hello_proto_goTypes = []any{
-	(*HelloRequest)(nil), // 0: hello.v1.HelloRequest
-	(*HelloReply)(nil),   // 1: hello.v1.HelloReply
+	(*HelloRequest)(nil),        // 0: hello.v1.HelloRequest
+	(*HelloReply)(nil),          // 1: hello.v1.HelloReply
+	(*SlowHelloRequest)(nil),    // 2: hello.v1.SlowHelloRequest
+	(*SlowHelloResponse)(nil),   // 3: hello.v1.SlowHelloResponse
+	(*durationpb.Duration)(nil), // 4: google.protobuf.Duration
 }
 var file_cmd_testserver_hello_hello_proto_depIdxs = []int32{
-	0, // 0: hello.v1.HelloService.HelloStream:input_type -> hello.v1.HelloRequest
-	1, // 1: hello.v1.HelloService.HelloStream:output_type -> hello.v1.HelloReply
-	1, // [1:2] is the sub-list for method output_type
-	0, // [0:1] is the sub-list for method input_type
-	0, // [0:0] is the sub-list for extension type_name
-	0, // [0:0] is the sub-list for extension extendee
-	0, // [0:0] is the sub-list for field type_name
+	4, // 0: hello.v1.SlowHelloRequest.duration:type_name -> google.protobuf.Duration
+	0, // 1: hello.v1.HelloService.HelloStream:input_type -> hello.v1.HelloRequest
+	2, // 2: hello.v1.HelloService.SlowHello:input_type -> hello.v1.SlowHelloRequest
+	1, // 3: hello.v1.HelloService.HelloStream:output_type -> hello.v1.HelloReply
+	3, // 4: hello.v1.HelloService.SlowHello:output_type -> hello.v1.SlowHelloResponse
+	3, // [3:5] is the sub-list for method output_type
+	1, // [1:3] is the sub-list for method input_type
+	1, // [1:1] is the sub-list for extension type_name
+	1, // [1:1] is the sub-list for extension extendee
+	0, // [0:1] is the sub-list for field type_name
 }
 
 func init() { file_cmd_testserver_hello_hello_proto_init() }
@@ -162,7 +271,7 @@ func file_cmd_testserver_hello_hello_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_cmd_testserver_hello_hello_proto_rawDesc), len(file_cmd_testserver_hello_hello_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   2,
+			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
