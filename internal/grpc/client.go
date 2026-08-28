@@ -18,6 +18,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
@@ -35,6 +36,65 @@ type Client struct {
 	source grpcurl.DescriptorSource
 	conn   *grpc.ClientConn
 	config Config
+}
+
+type UnaryResult struct {
+	Body     string
+	Headers  metadata.MD
+	Trailers metadata.MD
+	Status   *status.Status
+
+	formattedStatus string
+}
+
+func (r UnaryResult) StatusText() string {
+	return r.formattedStatus
+}
+
+func (r UnaryResult) Failed() bool {
+	return r.Status.Code() != codes.OK
+}
+
+func (r UnaryResult) HeadersText() string {
+	return grpcurl.MetadataToString(r.Headers)
+}
+
+func (r UnaryResult) TrailersText() string {
+	return grpcurl.MetadataToString(r.Trailers)
+}
+
+type unaryEventHandler struct {
+	formatter grpcurl.Formatter
+	body      bytes.Buffer
+	headers   metadata.MD
+	trailers  metadata.MD
+	status    *status.Status
+	formatErr error
+}
+
+var _ grpcurl.InvocationEventHandler = &unaryEventHandler{}
+
+func (h *unaryEventHandler) OnResolveMethod(_ *desc.MethodDescriptor) {}
+
+func (h *unaryEventHandler) OnSendHeaders(_ metadata.MD) {}
+
+func (h *unaryEventHandler) OnReceiveHeaders(md metadata.MD) {
+	h.headers = md.Copy()
+}
+
+func (h *unaryEventHandler) OnReceiveResponse(resp oldproto.Message) {
+	response, err := h.formatter(resp)
+	if err != nil {
+		h.formatErr = fmt.Errorf("failed to format unary response: %w", err)
+		return
+	}
+	h.body.WriteString(response)
+	h.body.WriteByte('\n')
+}
+
+func (h *unaryEventHandler) OnReceiveTrailers(stat *status.Status, md metadata.MD) {
+	h.trailers = md.Copy()
+	h.status = stat
 }
 
 func NewClient(ctx context.Context, config Config) (*Client, error) {

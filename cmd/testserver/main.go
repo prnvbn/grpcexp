@@ -9,12 +9,14 @@ import (
 	"net"
 	"time"
 
+	diagnosticsv1 "github.com/prnvbn/grpcexp/cmd/testserver/diagnostics"
 	echov1 "github.com/prnvbn/grpcexp/cmd/testserver/echo"
 	hellov1 "github.com/prnvbn/grpcexp/cmd/testserver/hello"
 	helloworldpb "google.golang.org/grpc/examples/helloworld/helloworld"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/grpc/status"
 )
@@ -24,9 +26,38 @@ var (
 )
 
 type server struct {
+	diagnosticsv1.UnimplementedDiagnosticsServiceServer
 	helloworldpb.UnimplementedGreeterServer
 	echov1.UnimplementedEchoServiceServer
 	hellov1.UnimplementedHelloServiceServer
+}
+
+func (s *server) InspectUnary(ctx context.Context, in *diagnosticsv1.InspectUnaryRequest) (*diagnosticsv1.InspectUnaryResponse, error) {
+	if err := grpc.SendHeader(ctx, metadata.Pairs(
+		"x-grpcexp-test-header", "response-header-value",
+		"x-grpcexp-test-header", "response-header-value-2",
+	)); err != nil {
+		return nil, status.Errorf(codes.Internal, "send response headers: %v", err)
+	}
+	grpc.SetTrailer(ctx, metadata.Pairs("x-grpcexp-test-trailer", "response-trailer-value"))
+
+	if !in.GetReturnError() {
+		return &diagnosticsv1.InspectUnaryResponse{Message: "unary response with metadata"}, nil
+	}
+
+	st, err := status.New(codes.InvalidArgument, "structured error requested").WithDetails(
+		&diagnosticsv1.FailureDetail{
+			Reason: "RETURN_ERROR_ENABLED",
+			Metadata: map[string]string{
+				"field": "return_error",
+				"hint":  "set return_error to false for a successful response",
+			},
+		},
+	)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "attach structured error details: %v", err)
+	}
+	return nil, st.Err()
 }
 
 func (s *server) SayHello(_ context.Context, in *helloworldpb.HelloRequest) (*helloworldpb.HelloReply, error) {
@@ -116,6 +147,7 @@ func main() {
 	}
 	s := grpc.NewServer()
 
+	diagnosticsv1.RegisterDiagnosticsServiceServer(s, &server{})
 	helloworldpb.RegisterGreeterServer(s, &server{})
 	echov1.RegisterEchoServiceServer(s, &server{})
 	hellov1.RegisterHelloServiceServer(s, &server{})

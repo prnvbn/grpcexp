@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package diagnostics.v1;
+
+message InspectUnaryRequest {
+  bool return_error = 1;
+}
+
+message InspectUnaryResponse {
+  string message = 1;
+}
+
+message FailureDetail {
+  string reason = 1;
+  map<string, string> metadata = 2;
+}
+
+service DiagnosticsService {
+  rpc InspectUnary(InspectUnaryRequest) returns (InspectUnaryResponse);
+}
