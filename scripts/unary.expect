@@ -1,5 +1,11 @@
 set timeout 20
 
+proc send_arrow {direction selection} {
+    send "\033\[$direction"
+    expect -re [format {> [^\r\n]*%s} $selection]
+    sleep 0.3
+}
+
 set bin $env(GRPCEXP_DEMO_BIN)
 set target $env(GRPCEXP_DEMO_TARGET)
 
@@ -7,7 +13,12 @@ spawn -noecho env -u NO_COLOR TERM=xterm-256color COLORTERM=truecolor $bin -a $t
 expect "more"
 
 sleep 1.0
-send "\t\t\t\t\r"
+send_arrow B echo.v1.EchoService
+send_arrow B grpc.reflection.v1.ServerReflection
+send_arrow B grpc.reflection.v1alpha.ServerReflection
+send_arrow B hello.v1.HelloService
+send_arrow B helloworld.Greeter
+send "\r"
 expect "helloworld.Greeter.SayHello"
 
 sleep 0.9
@@ -28,7 +39,7 @@ send "v"
 expect "Pranav"
 
 sleep 0.8
-send "\t"
+send_arrow B Submit
 
 sleep 0.8
 send "\r"

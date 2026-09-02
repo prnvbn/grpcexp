@@ -29,15 +29,15 @@ type Unary struct {
 	client  *grpc.Client
 	state   unaryState
 
-	response    string
+	result      grpc.UnaryResult
 	responseErr error
 	elapsed     time.Duration
 }
 
 type rpcResultMsg struct {
-	response string
-	err      error
-	elapsed  time.Duration
+	result  grpc.UnaryResult
+	err     error
+	elapsed time.Duration
 }
 
 func NewUnary(method protoreflect.MethodDescriptor, client *grpc.Client) *Unary {
@@ -56,7 +56,7 @@ func (f *Unary) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case rpcResultMsg:
 		f.state = unaryStateResult
-		f.response = msg.response
+		f.result = msg.result
 		f.responseErr = msg.err
 		f.elapsed = msg.elapsed
 		return f, nil
@@ -104,10 +104,26 @@ func (f *Unary) View() string {
 			out.WriteString(headerStyle.Render("Error"))
 			out.WriteString("\n\n")
 			out.WriteString(labelStyle.Render(f.responseErr.Error()))
+		} else if f.result.Failed() {
+			out.WriteString(headerStyle.Render("Error"))
+			out.WriteString("\n\n")
+			out.WriteString(f.result.StatusText())
 		} else {
 			out.WriteString(headerStyle.Render("Response"))
 			out.WriteString("\n\n")
-			out.WriteString(f.response)
+			out.WriteString(f.result.Body)
+		}
+		if f.responseErr == nil && len(f.result.Headers) > 0 {
+			out.WriteString("\n\n")
+			out.WriteString(headerStyle.Render("Response headers"))
+			out.WriteString("\n\n")
+			out.WriteString(f.result.HeadersText())
+		}
+		if f.responseErr == nil && len(f.result.Trailers) > 0 {
+			out.WriteString("\n\n")
+			out.WriteString(headerStyle.Render("Response trailers"))
+			out.WriteString("\n\n")
+			out.WriteString(f.result.TrailersText())
 		}
 		out.WriteString("\n\n")
 		out.WriteString(labelStyle.Render("elapsed: " + f.elapsed.String()))
@@ -140,9 +156,11 @@ func (f *Unary) handleResultKey(msg tea.KeyMsg) tea.Cmd {
 		f.state = unaryStateInput
 		f.builder.ResetToSubmit()
 	case "y":
-		content := f.response
+		content := f.result.Body
 		if f.responseErr != nil {
 			content = f.responseErr.Error()
+		} else if f.result.Failed() {
+			content = f.result.StatusText()
 		}
 		if err := clipboard.WriteAll(content); err != nil {
 			fmt.Fprintf(os.Stderr, "error writing to clipboard: %v\n", err)
@@ -165,11 +183,11 @@ func (f *Unary) invokeRPC() tea.Cmd {
 		defer cancel()
 
 		startedAt := time.Now()
-		response, err := client.InvokeRPC(ctx, methodFullName, request)
+		result, err := client.InvokeRPC(ctx, methodFullName, request)
 		return rpcResultMsg{
-			response: response,
-			err:      err,
-			elapsed:  time.Since(startedAt),
+			result:  result,
+			err:     err,
+			elapsed: time.Since(startedAt),
 		}
 	}
 }
