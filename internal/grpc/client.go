@@ -11,13 +11,13 @@ import (
 	"unicode"
 
 	"github.com/fullstorydev/grpcurl"
-	oldproto "github.com/golang/protobuf/proto" //nolint:staticcheck // grpcurl uses the legacy proto API
-	"github.com/jhump/protoreflect/desc"        //nolint:staticcheck // Deprecated package but required by grpcurl
+	"github.com/jhump/protoreflect/desc" //nolint:staticcheck // Required by grpcurl's descriptor API
 	"github.com/jhump/protoreflect/grpcreflect"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/protobuf/protoadapt"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
@@ -122,7 +122,7 @@ func (c *Client) InvokeStreaming(ctx context.Context, methodFullName string, req
 		events:    events,
 	}
 
-	requestSupplier := func(msg oldproto.Message) error {
+	requestSupplier := func(msg protoadapt.MessageV1) error {
 		request, ok := <-requests
 		if !ok {
 			return io.EOF

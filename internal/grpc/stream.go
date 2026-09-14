@@ -4,10 +4,10 @@ import (
 	"fmt"
 
 	"github.com/fullstorydev/grpcurl"
-	oldproto "github.com/golang/protobuf/proto" //nolint:staticcheck // grpcurl uses the legacy proto API
-	"github.com/jhump/protoreflect/desc"        //nolint:staticcheck // Deprecated package but required by grpcurl
+	"github.com/jhump/protoreflect/desc" //nolint:staticcheck // Required by grpcurl's descriptor API
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/protoadapt"
 )
 
 type StreamEventKind int
@@ -39,7 +39,7 @@ func (h *streamEventHandler) OnSendHeaders(_ metadata.MD) {}
 
 func (h *streamEventHandler) OnReceiveHeaders(_ metadata.MD) {}
 
-func (h *streamEventHandler) OnReceiveResponse(resp oldproto.Message) {
+func (h *streamEventHandler) OnReceiveResponse(resp protoadapt.MessageV1) {
 	h.count++
 	respStr, err := h.formatter(resp)
 	if err != nil {

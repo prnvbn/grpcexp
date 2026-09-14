@@ -8,11 +8,11 @@ import (
 	"strings"
 
 	"github.com/fullstorydev/grpcurl"
-	oldproto "github.com/golang/protobuf/proto" //nolint:staticcheck // grpcurl uses the legacy proto API
-	"github.com/jhump/protoreflect/desc"        //nolint:staticcheck // Deprecated package but required by grpcurl
+	"github.com/jhump/protoreflect/desc" //nolint:staticcheck // Required by grpcurl's descriptor API
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/protoadapt"
 )
 
 type UnaryResult struct {
@@ -59,7 +59,7 @@ func (h *unaryEventHandler) OnReceiveHeaders(md metadata.MD) {
 	h.headers = md.Copy()
 }
 
-func (h *unaryEventHandler) OnReceiveResponse(resp oldproto.Message) {
+func (h *unaryEventHandler) OnReceiveResponse(resp protoadapt.MessageV1) {
 	response, err := h.formatter(resp)
 	if err != nil {
 		h.formatErr = fmt.Errorf("failed to format unary response: %w", err)
