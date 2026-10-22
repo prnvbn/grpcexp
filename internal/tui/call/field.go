@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/charmbracelet/bubbles/textinput"
-	tea "github.com/charmbracelet/bubbletea"
+	"charm.land/bubbles/v2/textinput"
+	tea "charm.land/bubbletea/v2"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
@@ -339,7 +339,7 @@ func (f *Field) checkbox(focused bool) string {
 
 func (f *Field) inputView(prefix string) string {
 	if f.optional && f.kind == FieldText && f.width > 0 {
-		f.textInput.Width = max(1, f.width-len(prefix)-len(f.name)-2-optionalControlWidth)
+		f.textInput.SetWidth(max(1, f.width-len(prefix)-len(f.name)-2-optionalControlWidth))
 	}
 	return f.View()
 }
@@ -494,7 +494,7 @@ func (f *Field) Prev() bool {
 	return false
 }
 
-func (f *Field) HandleKey(msg tea.KeyMsg) (tea.Cmd, bool) {
+func (f *Field) HandleKey(msg tea.KeyPressMsg) (tea.Cmd, bool) {
 	if f.optionalControlFocused && msg.String() == "enter" {
 		f.present = !f.present
 		return nil, true
@@ -563,7 +563,7 @@ func (f *Field) SetWidth(width int) {
 	f.width = width
 	switch f.kind {
 	case FieldText:
-		f.textInput.Width = width
+		f.textInput.SetWidth(width)
 	case FieldGroup:
 		f.fieldGroup.SetWidth(width)
 	case FieldList:

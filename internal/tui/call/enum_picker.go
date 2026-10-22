@@ -3,7 +3,7 @@ package call
 import (
 	"strings"
 
-	tea "github.com/charmbracelet/bubbletea"
+	tea "charm.land/bubbletea/v2"
 )
 
 type enumItem struct {
@@ -41,13 +41,16 @@ func (p *enumPicker) Prev() {
 }
 
 func (p *enumPicker) Update(msg tea.Msg) {
-	if keyMsg, ok := msg.(tea.KeyMsg); ok {
-		switch keyMsg.String() {
-		case "left":
-			p.Prev()
-		case "right":
-			p.Next()
-		}
+	keyMsg, ok := msg.(tea.KeyPressMsg)
+	if !ok {
+		return
+	}
+
+	switch keyMsg.String() {
+	case "left":
+		p.Prev()
+	case "right":
+		p.Next()
 	}
 }
 

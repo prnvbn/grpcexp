@@ -8,9 +8,9 @@ import (
 	"strings"
 	"time"
 
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 	"github.com/atotto/clipboard"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
 	"github.com/prnvbn/grpcexp/internal/grpc"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
@@ -84,7 +84,7 @@ func (f *Stream) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return f, nil
 		}
 		return f, nil
-	case tea.KeyMsg:
+	case tea.KeyPressMsg:
 		cmd, handled := f.handleKey(msg)
 		if handled {
 			return f, cmd
@@ -101,14 +101,14 @@ func (f *Stream) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return f, nil
 }
 
-func (f *Stream) View() string {
+func (f *Stream) View() tea.View {
 	var out strings.Builder
 
 	out.WriteString(callHeader(f.method))
 	out.WriteString("\n\n")
 	out.WriteString(f.renderPanes())
 
-	return out.String()
+	return tea.NewView(out.String())
 }
 
 func (f *Stream) SetSize(width, height int) {
@@ -132,7 +132,7 @@ func (f *Stream) Cancel() {
 	f.closeSend()
 }
 
-func (f *Stream) handleKey(msg tea.KeyMsg) (tea.Cmd, bool) {
+func (f *Stream) handleKey(msg tea.KeyPressMsg) (tea.Cmd, bool) {
 	switch msg.String() {
 	case "ctrl+y":
 		if f.activePane == streamPaneRecv {

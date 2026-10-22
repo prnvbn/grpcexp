@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
+	tea "charm.land/bubbletea/v2"
 	"github.com/atotto/clipboard"
-	tea "github.com/charmbracelet/bubbletea"
 	"github.com/prnvbn/grpcexp/internal/grpc"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
@@ -60,7 +60,7 @@ func (f *Unary) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		f.responseErr = msg.err
 		f.elapsed = msg.elapsed
 		return f, nil
-	case tea.KeyMsg:
+	case tea.KeyPressMsg:
 		switch f.state {
 		case unaryStateResult:
 			return f, f.handleResultKey(msg)
@@ -89,7 +89,7 @@ func (f *Unary) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return f, nil
 }
 
-func (f *Unary) View() string {
+func (f *Unary) View() tea.View {
 	var out strings.Builder
 
 	out.WriteString(callHeader(f.method))
@@ -137,7 +137,7 @@ func (f *Unary) View() string {
 		panic(fmt.Sprintf("unknown unary state: %d", f.state))
 	}
 
-	return out.String()
+	return tea.NewView(out.String())
 }
 
 func (f *Unary) SetSize(width, _ int) {
@@ -150,7 +150,7 @@ func (f *Unary) AcceptsTextInput() bool {
 
 func (f *Unary) Cancel() {}
 
-func (f *Unary) handleResultKey(msg tea.KeyMsg) tea.Cmd {
+func (f *Unary) handleResultKey(msg tea.KeyPressMsg) tea.Cmd {
 	switch msg.String() {
 	case "r":
 		f.state = unaryStateInput

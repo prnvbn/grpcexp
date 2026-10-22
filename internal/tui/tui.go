@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	tea "github.com/charmbracelet/bubbletea"
+	tea "charm.land/bubbletea/v2"
 	"github.com/prnvbn/grpcexp/internal/grpc"
 	"github.com/prnvbn/grpcexp/internal/tui/call"
 )
@@ -50,7 +50,7 @@ func (m Model) Init() tea.Cmd {
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
-	case tea.KeyMsg:
+	case tea.KeyPressMsg:
 		model, cmd, done := m.handleKey(msg)
 		if done {
 			return model, cmd
@@ -62,7 +62,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, m.forwardToScreen(msg)
 }
 
-func (m *Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+func (m *Model) handleKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd, bool) {
 	switch msg.String() {
 	case "q":
 		if m.state == screenCallMethod && m.callMethodForm != nil && m.callMethodForm.AcceptsTextInput() {
@@ -171,20 +171,26 @@ func (m *Model) forwardToScreen(msg tea.Msg) tea.Cmd {
 	return nil
 }
 
-func (m Model) View() string {
+func (m Model) View() tea.View {
+	v := m.screenView()
+	v.AltScreen = true
+	return v
+}
+
+func (m Model) screenView() tea.View {
 	switch m.state {
 	case screenServices:
-		return m.servicesList.View()
+		return tea.NewView(m.servicesList.View())
 	case screenMethods:
 		if m.methodsList != nil {
-			return m.methodsList.View()
+			return tea.NewView(m.methodsList.View())
 		}
-		return "No methods found for selected service"
+		return tea.NewView("No methods found for selected service")
 	case screenCallMethod:
 		if m.callMethodForm != nil {
 			return m.callMethodForm.View()
 		}
-		return "No method details found"
+		return tea.NewView("No method details found")
 	}
-	panic(fmt.Sprintf("unknown state - non exhaustive switch for screen state: %d", m.state))
+	panic(fmt.Sprintf("unknown state, non exhaustive switch for screen state: %d", m.state))
 }

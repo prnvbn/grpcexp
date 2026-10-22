@@ -3,7 +3,7 @@ package call
 import (
 	"strings"
 
-	tea "github.com/charmbracelet/bubbletea"
+	tea "charm.land/bubbletea/v2"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
@@ -155,7 +155,7 @@ func (o *fieldOneof) AcceptsTextInput() bool {
 	return false
 }
 
-func (o *fieldOneof) HandleKey(msg tea.KeyMsg) (tea.Cmd, bool) {
+func (o *fieldOneof) HandleKey(msg tea.KeyPressMsg) (tea.Cmd, bool) {
 	if !o.focused {
 		return nil, false
 	}
