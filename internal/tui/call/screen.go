@@ -3,7 +3,7 @@ package call
 import (
 	"fmt"
 
-	tea "github.com/charmbracelet/bubbletea"
+	tea "charm.land/bubbletea/v2"
 	"github.com/prnvbn/grpcexp/internal/grpc"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )

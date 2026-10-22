@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	tea "github.com/charmbracelet/bubbletea"
+	tea "charm.land/bubbletea/v2"
 	"github.com/prnvbn/grpcexp/internal/grpc"
 	"github.com/prnvbn/grpcexp/internal/tui"
 	"github.com/spf13/cobra"
@@ -70,7 +70,7 @@ func run(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	p := tea.NewProgram(m, tea.WithAltScreen())
+	p := tea.NewProgram(m)
 	if _, err := p.Run(); err != nil {
 		return err
 	}

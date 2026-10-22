@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	tea "github.com/charmbracelet/bubbletea"
+	tea "charm.land/bubbletea/v2"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
@@ -28,12 +28,12 @@ func NewBuilder(msgDesc protoreflect.MessageDescriptor) *Builder {
 	return b
 }
 
-func (b *Builder) HandleKey(msg tea.KeyMsg, onSubmit func() tea.Cmd) (tea.Cmd, bool) {
+func (b *Builder) HandleKey(msg tea.KeyPressMsg, onSubmit func() tea.Cmd) (tea.Cmd, bool) {
 	switch msg.String() {
 	case "tab", "down":
 		b.nextField()
 		return nil, true
-	case "enter", " ":
+	case "enter", "space":
 		if b.submitFocused {
 			return onSubmit(), true
 		}

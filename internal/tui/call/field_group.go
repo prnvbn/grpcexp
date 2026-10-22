@@ -4,7 +4,7 @@ import (
 	"maps"
 	"strings"
 
-	tea "github.com/charmbracelet/bubbletea"
+	tea "charm.land/bubbletea/v2"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
@@ -234,7 +234,7 @@ func (g *fieldGroup) AcceptsTextInput() bool {
 	return false
 }
 
-func (g *fieldGroup) HandleKey(msg tea.KeyMsg) (tea.Cmd, bool) {
+func (g *fieldGroup) HandleKey(msg tea.KeyPressMsg) (tea.Cmd, bool) {
 	if !g.focused || len(g.fields) == 0 {
 		return nil, false
 	}

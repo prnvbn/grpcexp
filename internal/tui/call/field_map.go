@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	tea "github.com/charmbracelet/bubbletea"
+	tea "charm.land/bubbletea/v2"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
@@ -282,7 +282,7 @@ func (m *fieldMap) AcceptsTextInput() bool {
 	return entry.value.AcceptsTextInput()
 }
 
-func (m *fieldMap) HandleKey(msg tea.KeyMsg) (tea.Cmd, bool) {
+func (m *fieldMap) HandleKey(msg tea.KeyPressMsg) (tea.Cmd, bool) {
 	if !m.focused {
 		return nil, false
 	}
