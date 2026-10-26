@@ -21,6 +21,7 @@ const (
 	FieldList
 	FieldMap
 	FieldOneof
+	FieldTimestamp
 )
 
 type Field struct {
@@ -170,21 +171,6 @@ func validateDuration(s string) error {
 	return nil
 }
 
-func validateTimestamp(s string) error {
-	if s == "" {
-		return nil
-	}
-	_, err := time.Parse(time.RFC3339Nano, s)
-	if err != nil {
-		// Try RFC3339 format without nanoseconds
-		_, err = time.Parse(time.RFC3339, s)
-		if err != nil {
-			return fmt.Errorf("must be a valid RFC 3339 timestamp (e.g., 2017-01-15T01:30:15.01Z)")
-		}
-	}
-	return nil
-}
-
 func NewFieldFromProto(field protoreflect.FieldDescriptor) *Field {
 	f := newFieldFromProto(field, "")
 	if f != nil {
@@ -230,7 +216,9 @@ func newFieldFromProto(field protoreflect.FieldDescriptor, inputRole string) *Fi
 		// support for well-known types
 		switch msgDesc.FullName() {
 		case "google.protobuf.Timestamp":
-			return NewTextField(name, textFieldPlaceholder(field, inputRole), 64, validateTimestamp)
+			f := NewTextField(name, textFieldPlaceholder(field, inputRole), 64, validateTimestamp)
+			f.kind = FieldTimestamp
+			return f
 		case "google.protobuf.Duration":
 			return NewTextField(name, textFieldPlaceholder(field, inputRole), 64, validateDuration)
 		default:
@@ -267,9 +255,9 @@ func textFieldPlaceholder(field protoreflect.FieldDescriptor, inputRole string) 
 		switch field.Message().FullName() {
 		case "google.protobuf.Timestamp":
 			if inputRole != "" {
-				return fmt.Sprintf("Enter timestamp %s (RFC 3339, e.g., 2017-01-15T01:30:15.01Z)...", inputRole)
+				return fmt.Sprintf("Enter timestamp %s (e.g., now, 2017-01-15T01:30:15.01Z, 2017-01-15, 1484443815)...", inputRole)
 			}
-			return "Enter RFC 3339 timestamp (e.g., 2017-01-15T01:30:15.01Z)..."
+			return "Enter timestamp (e.g., now, 2017-01-15T01:30:15.01Z, 2017-01-15, 1484443815)..."
 		case "google.protobuf.Duration":
 			if inputRole != "" {
 				return fmt.Sprintf("Enter duration %s (e.g., 10s)...", inputRole)
@@ -282,6 +270,11 @@ func textFieldPlaceholder(field protoreflect.FieldDescriptor, inputRole string) 
 
 func (f *Field) Value() any {
 	switch f.kind {
+	case FieldTimestamp:
+		if t, err := parseTimestamp(f.textInput.Value()); err == nil {
+			return t.UTC().Format(time.RFC3339Nano)
+		}
+		return f.textInput.Value()
 	case FieldText:
 		return f.textInput.Value()
 	case FieldEnum, FieldBool:
@@ -301,7 +294,7 @@ func (f *Field) Value() any {
 
 func (f *Field) View() string {
 	switch f.kind {
-	case FieldText:
+	case FieldText, FieldTimestamp:
 		return f.textInput.View()
 	case FieldEnum, FieldBool:
 		return f.enumPicker.View()
@@ -338,7 +331,7 @@ func (f *Field) checkbox(focused bool) string {
 }
 
 func (f *Field) inputView(prefix string) string {
-	if f.optional && f.kind == FieldText && f.width > 0 {
+	if f.optional && (f.kind == FieldText || f.kind == FieldTimestamp) && f.width > 0 {
 		f.textInput.SetWidth(max(1, f.width-len(prefix)-len(f.name)-2-optionalControlWidth))
 	}
 	return f.View()
@@ -349,7 +342,7 @@ func (f *Field) AcceptsTextInput() bool {
 		return false
 	}
 	switch f.kind {
-	case FieldText:
+	case FieldText, FieldTimestamp:
 		return true
 	case FieldList:
 		if f.listField != nil {
@@ -370,7 +363,7 @@ func (f *Field) AcceptsTextInput() bool {
 func (f *Field) Focus() tea.Cmd {
 	f.optionalControlFocused = false
 	switch f.kind {
-	case FieldText:
+	case FieldText, FieldTimestamp:
 		return f.textInput.Focus()
 	case FieldGroup:
 		if f.fieldGroup != nil {
@@ -404,7 +397,7 @@ func (f *Field) FocusFromEnd() tea.Cmd {
 func (f *Field) focusValueFromEnd() tea.Cmd {
 	f.optionalControlFocused = false
 	switch f.kind {
-	case FieldText:
+	case FieldText, FieldTimestamp:
 		return f.textInput.Focus()
 	case FieldGroup:
 		if f.fieldGroup != nil {
@@ -429,7 +422,7 @@ func (f *Field) focusValueFromEnd() tea.Cmd {
 func (f *Field) Blur() {
 	f.optionalControlFocused = false
 	switch f.kind {
-	case FieldText:
+	case FieldText, FieldTimestamp:
 		f.textInput.Blur()
 	case FieldGroup:
 		if f.fieldGroup != nil {
@@ -532,7 +525,7 @@ func (f *Field) Update(msg tea.Msg) tea.Cmd {
 		return nil
 	}
 	switch f.kind {
-	case FieldText:
+	case FieldText, FieldTimestamp:
 		var cmd tea.Cmd
 		f.textInput, cmd = f.textInput.Update(msg)
 		if f.optional && f.textInput.Value() != "" {
@@ -562,7 +555,7 @@ func (f *Field) Update(msg tea.Msg) tea.Cmd {
 func (f *Field) SetWidth(width int) {
 	f.width = width
 	switch f.kind {
-	case FieldText:
+	case FieldText, FieldTimestamp:
 		f.textInput.SetWidth(width)
 	case FieldGroup:
 		f.fieldGroup.SetWidth(width)

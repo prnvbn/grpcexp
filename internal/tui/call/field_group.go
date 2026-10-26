@@ -216,7 +216,7 @@ func (g *fieldGroup) AcceptsTextInput() bool {
 		return false
 	}
 	switch field.kind {
-	case FieldText:
+	case FieldText, FieldTimestamp:
 		return !field.optionalControlFocused
 	case FieldList:
 		if field.listField != nil {
