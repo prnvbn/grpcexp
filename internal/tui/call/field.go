@@ -2,7 +2,6 @@ package call
 
 import (
 	"fmt"
-	"strconv"
 	"strings"
 	"time"
 
@@ -38,13 +37,11 @@ type Field struct {
 	listField  *fieldList
 	mapField   *fieldMap
 	oneofField *fieldOneof
-
-	validate func(string) error
 }
 
 const optionalControlWidth = 6
 
-func NewTextField(name string, placeholder string, charLimit int, validate func(string) error) *Field {
+func NewTextField(name string, placeholder string, charLimit int) *Field {
 	ti := textinput.New()
 	ti.Placeholder = placeholder
 	ti.CharLimit = charLimit
@@ -53,7 +50,6 @@ func NewTextField(name string, placeholder string, charLimit int, validate func(
 		name:      name,
 		kind:      FieldText,
 		textInput: ti,
-		validate:  validate,
 	}
 }
 
@@ -127,50 +123,6 @@ func NewOneofField(name string, oneof protoreflect.OneofDescriptor) *Field {
 	}
 }
 
-func validateInt(s string) error {
-	if s == "" {
-		return nil
-	}
-	_, err := strconv.ParseInt(s, 10, 64)
-	if err != nil {
-		return fmt.Errorf("must be a valid integer")
-	}
-	return nil
-}
-
-func validateUint(s string) error {
-	if s == "" {
-		return nil
-	}
-	_, err := strconv.ParseUint(s, 10, 64)
-	if err != nil {
-		return fmt.Errorf("must be a valid positive integer")
-	}
-	return nil
-}
-
-func validateFloat(s string) error {
-	if s == "" {
-		return nil
-	}
-	_, err := strconv.ParseFloat(s, 64)
-	if err != nil {
-		return fmt.Errorf("must be a valid number")
-	}
-	return nil
-}
-
-func validateDuration(s string) error {
-	if s == "" {
-		return nil
-	}
-	_, err := time.ParseDuration(s)
-	if err != nil {
-		return fmt.Errorf("must be a valid duration (e.g., 10s)")
-	}
-	return nil
-}
-
 func NewFieldFromProto(field protoreflect.FieldDescriptor) *Field {
 	f := newFieldFromProto(field, "")
 	if f != nil {
@@ -188,7 +140,7 @@ func newFieldFromProto(field protoreflect.FieldDescriptor, inputRole string) *Fi
 
 	switch kind {
 	case protoreflect.StringKind:
-		return NewTextField(name, textFieldPlaceholder(field, inputRole), 0, nil)
+		return NewTextField(name, textFieldPlaceholder(field, inputRole), 0)
 
 	case protoreflect.BoolKind:
 		return NewBoolField(name)
@@ -196,31 +148,31 @@ func newFieldFromProto(field protoreflect.FieldDescriptor, inputRole string) *Fi
 	case protoreflect.Int32Kind, protoreflect.Int64Kind,
 		protoreflect.Sint32Kind, protoreflect.Sint64Kind,
 		protoreflect.Sfixed32Kind, protoreflect.Sfixed64Kind:
-		return NewTextField(name, textFieldPlaceholder(field, inputRole), 64, validateInt)
+		return NewTextField(name, textFieldPlaceholder(field, inputRole), 64)
 
 	case protoreflect.Uint32Kind, protoreflect.Uint64Kind,
 		protoreflect.Fixed32Kind, protoreflect.Fixed64Kind:
-		return NewTextField(name, textFieldPlaceholder(field, inputRole), 64, validateUint)
+		return NewTextField(name, textFieldPlaceholder(field, inputRole), 64)
 
 	case protoreflect.FloatKind, protoreflect.DoubleKind:
-		return NewTextField(name, textFieldPlaceholder(field, inputRole), 64, validateFloat)
+		return NewTextField(name, textFieldPlaceholder(field, inputRole), 64)
 
 	case protoreflect.EnumKind:
 		return NewEnumField(name, field)
 
 	case protoreflect.BytesKind:
-		return NewTextField(name, textFieldPlaceholder(field, inputRole), 512, nil)
+		return NewTextField(name, textFieldPlaceholder(field, inputRole), 512)
 	case protoreflect.MessageKind:
 		msgDesc := field.Message()
 
 		// support for well-known types
 		switch msgDesc.FullName() {
 		case "google.protobuf.Timestamp":
-			f := NewTextField(name, textFieldPlaceholder(field, inputRole), 64, validateTimestamp)
+			f := NewTextField(name, textFieldPlaceholder(field, inputRole), 64)
 			f.kind = FieldTimestamp
 			return f
 		case "google.protobuf.Duration":
-			return NewTextField(name, textFieldPlaceholder(field, inputRole), 64, validateDuration)
+			return NewTextField(name, textFieldPlaceholder(field, inputRole), 64)
 		default:
 			return NewFieldGroup(name, field)
 		}

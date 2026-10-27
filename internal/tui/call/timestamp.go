@@ -9,14 +9,6 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-func validateTimestamp(s string) error {
-	if strings.TrimSpace(s) == "" {
-		return nil
-	}
-	_, err := parseTimestamp(s)
-	return err
-}
-
 func parseTimestamp(s string) (time.Time, error) {
 	s = strings.TrimSpace(s)
 	if strings.EqualFold(s, "now") {
