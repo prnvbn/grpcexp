@@ -1,7 +1,17 @@
 # demo-cols: 120
 # demo-rows: 24
 
-set timeout 20
+set timeout 10
+expect_after {
+    timeout {
+        puts stderr "demo failed: timed out waiting for terminal output"
+        exit 1
+    }
+    eof {
+        puts stderr "demo failed: grpcexp exited unexpectedly"
+        exit 1
+    }
+}
 
 proc send_arrow {direction selection} {
     send "\033\[$direction"
@@ -9,12 +19,11 @@ proc send_arrow {direction selection} {
     sleep 0.3
 }
 
-proc type_and_expect {text} {
-    set value ""
+# The renderer outputs changed characters, not the full input value.
+proc type_text {text} {
     foreach char [split $text ""] {
         send -- $char
-        append value $char
-        expect $value
+        sleep 0.1
     }
 }
 
@@ -36,7 +45,7 @@ sleep 0.9
 send "\r"
 expect "No stream events yet."
 
-type_and_expect "Pranav"
+type_text "Pranav"
 
 sleep 0.8
 send_arrow B Send
@@ -48,7 +57,7 @@ sleep 0.8
 send_arrow A {name:}
 send "\x15"
 
-type_and_expect "Manya"
+type_text "Manya"
 
 sleep 0.8
 send_arrow B Send
@@ -57,3 +66,10 @@ send "\r"
 expect "Hello Manya"
 
 sleep 3.0
+
+# End the interactive app so the recording can finish cleanly.
+send "\x03"
+expect {
+    eof {}
+}
+wait

@@ -1,4 +1,14 @@
-set timeout 20
+set timeout 10
+expect_after {
+    timeout {
+        puts stderr "demo failed: timed out waiting for terminal output"
+        exit 1
+    }
+    eof {
+        puts stderr "demo failed: grpcexp exited unexpectedly"
+        exit 1
+    }
+}
 
 proc send_arrow {direction selection} {
     send "\033\[$direction"
@@ -25,18 +35,11 @@ sleep 0.9
 send "\r"
 expect "copy grpcurl"
 
-send "P"
-expect "P"
-send "r"
-expect "Pr"
-send "a"
-expect "Pra"
-send "n"
-expect "Pran"
-send "a"
-expect "Prana"
-send "v"
-expect "Pranav"
+# The renderer outputs changed characters, not the full input value.
+foreach char [split "Pranav" ""] {
+    send -- $char
+    sleep 0.1
+}
 
 sleep 0.8
 send_arrow B Submit
@@ -46,3 +49,10 @@ send "\r"
 expect "Hello Pranav"
 
 sleep 3.0
+
+# End the interactive app so the recording can finish cleanly.
+send "\x03"
+expect {
+    eof {}
+}
+wait

@@ -45,6 +45,7 @@ echo "Building grpcexp..."
 echo "Recording terminal session..."
 asciinema rec \
     --overwrite \
+    --return \
     --headless \
     --window-size "${COLS}x${ROWS}" \
     -i 1.4 \
