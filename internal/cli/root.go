@@ -31,6 +31,7 @@ var rootCmd = &cobra.Command{
 	Use:          "grpcexp",
 	Short:        "grpc explorer",
 	Long:         `An interactive explorer for interacting with grpc servers.`,
+	Args:         cobra.NoArgs,
 	RunE:         run,
 	SilenceUsage: true,
 }
